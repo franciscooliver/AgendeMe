@@ -1,4 +1,4 @@
-# agendeme
+# AgendeMe
 
 A new Flutter project.
 

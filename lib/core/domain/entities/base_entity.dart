@@ -21,5 +21,5 @@ abstract class BaseEntity extends Equatable {
   BaseEntity copyWith();
 
   @override
-  String toString() => '${runtimeType}(id: $id)';
+  String toString() => '$runtimeType(id: $id)';
 }

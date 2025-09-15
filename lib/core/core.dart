@@ -1,5 +1,6 @@
 // Error handling
 export 'error/failures.dart';
+export 'error/exceptions.dart';
 
 // Use cases
 export 'usecases/usecase.dart';
@@ -7,6 +8,7 @@ export 'usecases/usecase.dart';
 // Domain base classes
 export 'domain/entities/base_entity.dart';
 export 'domain/repositories/base_repository.dart';
+export 'domain/services/i_storage_service.dart';
 
 // Network
 export 'network/network_info.dart';

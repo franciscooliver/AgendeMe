@@ -1,15 +1,21 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
 import '../../core/core.dart';
 import 'data/datasources/user_profile_remote_datasource.dart';
 import 'data/repositories/user_profile_repository_impl.dart';
+import 'data/services/firebase_storage_service.dart';
+import 'data/services/image_picker_service.dart';
+import 'data/services/image_compressor_service.dart';
 import 'domain/repositories/user_profile_repository.dart';
 import 'domain/usecases/create_user_profile.dart';
 import 'domain/usecases/delete_user_profile.dart';
 import 'domain/usecases/get_user_profile.dart';
 import 'domain/usecases/get_user_profile_by_user_id.dart';
 import 'domain/usecases/update_user_profile.dart';
+import 'domain/usecases/pick_and_compress_image_usecase.dart';
+import 'domain/usecases/upload_profile_picture_usecase.dart';
 import 'presentation/controllers/user_profile_controller.dart';
 import 'presentation/controllers/user_type_selection_controller.dart';
 import 'presentation/pages/user_type_selection_screen.dart';
@@ -29,9 +35,23 @@ class UserProfileModule extends Module {
   void binds(Injector i) {
     // External dependencies
     i.addLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
+    i.addLazySingleton<FirebaseStorage>(() => FirebaseStorage.instance);
     
     // NetworkInfo from parent module (AppModule)
     // Using Modular.get to access parent scope
+
+    // Services
+    i.addLazySingleton<IStorageService>(
+      () => FirebaseStorageService(firebaseStorage: i.get<FirebaseStorage>()),
+    );
+    
+    i.addLazySingleton<ImagePickerService>(
+      () => ImagePickerService(),
+    );
+    
+    i.addLazySingleton<ImageCompressorService>(
+      () => ImageCompressorService(),
+    );
 
     // Data Sources
     i.addLazySingleton<UserProfileRemoteDataSource>(
@@ -69,12 +89,28 @@ class UserProfileModule extends Module {
       () => DeleteUserProfile(i.get<UserProfileRepository>()),
     );
 
+    i.addLazySingleton<PickAndCompressImageUseCase>(
+      () => PickAndCompressImageUseCase(
+        imagePickerService: i.get<ImagePickerService>(),
+        imageCompressorService: i.get<ImageCompressorService>(),
+      ),
+    );
+
+    i.addLazySingleton<UploadProfilePictureUseCase>(
+      () => UploadProfilePictureUseCase(
+        pickAndCompressImageUseCase: i.get<PickAndCompressImageUseCase>(),
+        storageService: i.get<IStorageService>(),
+        userProfileRepository: i.get<UserProfileRepository>(),
+      ),
+    );
+
     // Controllers
     i.addLazySingleton<UserProfileController>(
       () => UserProfileController(
         getUserProfileByUserId: i.get<GetUserProfileByUserId>(),
         createUserProfile: i.get<CreateUserProfile>(),
         updateUserProfile: i.get<UpdateUserProfile>(),
+        uploadProfilePictureUseCase: i.get<UploadProfilePictureUseCase>(),
       ),
     );
 

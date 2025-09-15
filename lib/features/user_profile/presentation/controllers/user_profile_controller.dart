@@ -5,6 +5,7 @@ import '../../domain/entities/user_type.dart';
 import '../../domain/usecases/create_user_profile.dart';
 import '../../domain/usecases/get_user_profile_by_user_id.dart';
 import '../../domain/usecases/update_user_profile.dart';
+import '../../domain/usecases/upload_profile_picture_usecase.dart';
 
 /// Controller para gerenciar o estado do perfil de usuário
 /// 
@@ -17,11 +18,13 @@ class UserProfileController extends GetxController {
   final GetUserProfileByUserId getUserProfileByUserId;
   final CreateUserProfile createUserProfile;
   final UpdateUserProfile updateUserProfile;
+  final UploadProfilePictureUseCase uploadProfilePictureUseCase;
 
   UserProfileController({
     required this.getUserProfileByUserId,
     required this.createUserProfile,
     required this.updateUserProfile,
+    required this.uploadProfilePictureUseCase,
   });
 
   // Estado reativo
@@ -31,6 +34,10 @@ class UserProfileController extends GetxController {
   final RxBool _hasProfile = false.obs;
   final RxBool _lastOperationSuccess = false.obs;
   final RxString _lastSuccessMessage = ''.obs;
+  
+  // Estados específicos para upload de foto de perfil
+  final RxBool _isUploadingProfilePicture = false.obs;
+  final RxString _profilePictureError = ''.obs;
 
   // Getters
   UserProfileEntity? get userProfile => _userProfile.value;
@@ -39,6 +46,10 @@ class UserProfileController extends GetxController {
   bool get hasProfile => _hasProfile.value;
   bool get lastOperationSuccess => _lastOperationSuccess.value;
   String get lastSuccessMessage => _lastSuccessMessage.value;
+  
+  // Getters para upload de foto de perfil
+  bool get isUploadingProfilePicture => _isUploadingProfilePicture.value;
+  String get profilePictureError => _profilePictureError.value;
 
   /// Carrega o perfil do usuário pelo userId do Firebase Auth
   Future<void> loadUserProfile(String userId) async {
@@ -277,4 +288,93 @@ class UserProfileController extends GetxController {
 
   /// Verifica se o usuário é um cliente
   bool get isClient => _userProfile.value?.isClient ?? false;
+
+  /// Limpa erro específico de foto de perfil
+  void clearProfilePictureError() {
+    _profilePictureError.value = '';
+  }
+
+  /// Faz upload de foto de perfil a partir da galeria
+  Future<bool> uploadProfilePictureFromGallery() async {
+    return await _uploadProfilePicture(
+      UploadProfilePictureParams.fromGallery(),
+    );
+  }
+
+  /// Faz upload de foto de perfil a partir da câmera
+  Future<bool> uploadProfilePictureFromCamera() async {
+    return await _uploadProfilePicture(
+      UploadProfilePictureParams.fromCamera(),
+    );
+  }
+
+  /// Método privado que executa o upload da foto de perfil
+  Future<bool> _uploadProfilePicture(UploadProfilePictureParams params) async {
+    try {
+      _isUploadingProfilePicture.value = true;
+      _profilePictureError.value = '';
+
+      final result = await uploadProfilePictureUseCase(params);
+
+      return result.fold(
+        (failure) {
+          _profilePictureError.value = failure.message;
+          _showErrorFeedback('Erro no upload', failure.message);
+          return false;
+        },
+        (downloadUrl) {
+          // Atualizar perfil local com nova URL
+          if (_userProfile.value != null) {
+            _userProfile.value = _userProfile.value!.copyWith(
+              profileImageUrl: downloadUrl,
+              updatedAt: DateTime.now(),
+            );
+          }
+          
+          _showSuccessFeedback('Sucesso', 'Foto de perfil atualizada!');
+          return true;
+        },
+      );
+
+    } catch (e) {
+      _profilePictureError.value = 'Erro inesperado: $e';
+      _showErrorFeedback('Erro inesperado', 'Falha no upload da foto: $e');
+      return false;
+    } finally {
+      _isUploadingProfilePicture.value = false;
+    }
+  }
+
+  /// Obtém a URL da foto de perfil atual
+  String? get currentProfilePictureUrl => _userProfile.value?.profileImageUrl;
+
+  /// Verifica se o usuário tem foto de perfil
+  bool get hasProfilePicture => currentProfilePictureUrl != null && 
+                               currentProfilePictureUrl!.isNotEmpty;
+
+  /// Mostra feedback de sucesso (evita problemas com GetX)
+  void _showSuccessFeedback(String title, String message) {
+    try {
+      Get.snackbar(
+        title,
+        message,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      print('⚠️ Erro ao mostrar snackbar de sucesso: $e');
+    }
+  }
+
+  /// Mostra feedback de erro (evita problemas com GetX)
+  void _showErrorFeedback(String title, String message) {
+    try {
+      Get.snackbar(
+        title,
+        message,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    } catch (e) {
+      print('⚠️ Erro ao mostrar snackbar de erro: $e');
+    }
+  }
 }

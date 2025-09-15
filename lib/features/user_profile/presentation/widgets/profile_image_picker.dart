@@ -1,27 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+import 'package:get/get.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
+import '../controllers/user_profile_controller.dart';
 
 /// Widget para seleção/upload da foto de perfil
 class ProfileImagePicker extends StatelessWidget {
   final String? imageUrl;
   final Function(String?) onImageChanged;
   final double size;
+  late final UserProfileController controller;
 
-  const ProfileImagePicker({
+  ProfileImagePicker({
     super.key,
     this.imageUrl,
     required this.onImageChanged,
     this.size = 120,
-  });
+  }) {
+    controller = Modular.get<UserProfileController>();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Column(
+    return Obx(() => Column(
       children: [
-        _buildImageContainer(context),
+        Stack(
+          children: [
+            _buildImageContainer(context),
+            if (controller.isUploadingProfilePicture)
+              _buildUploadingOverlay(),
+          ],
+        ),
         const SizedBox(height: 12),
         _buildActionButtons(context),
+        if (controller.profilePictureError.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _buildErrorMessage(context),
+        ],
       ],
-    );
+    ));
   }
 
   Widget _buildImageContainer(BuildContext context) {
@@ -43,7 +61,7 @@ class ProfileImagePicker extends StatelessWidget {
         ],
       ),
       child: ClipOval(
-        child: imageUrl != null && imageUrl!.isNotEmpty
+        child: controller.hasProfilePicture
             ? _buildNetworkImage()
             : _buildPlaceholder(context),
       ),
@@ -51,16 +69,13 @@ class ProfileImagePicker extends StatelessWidget {
   }
 
   Widget _buildNetworkImage() {
-    return Image.network(
-      imageUrl!,
+    return CachedNetworkImage(
+      imageUrl: controller.currentProfilePictureUrl!,
       fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) {
-        return _buildPlaceholder(context);
-      },
-      loadingBuilder: (context, child, loadingProgress) {
-        if (loadingProgress == null) return child;
-        return _buildLoadingIndicator();
-      },
+      placeholder: (context, url) => _buildLoadingIndicator(),
+      errorWidget: (context, url, error) => _buildPlaceholder(context),
+      fadeInDuration: const Duration(milliseconds: 300),
+      fadeOutDuration: const Duration(milliseconds: 100),
     );
   }
 
@@ -89,14 +104,27 @@ class ProfileImagePicker extends StatelessWidget {
       spacing: 8,
       children: [
         ElevatedButton.icon(
-          onPressed: () => _pickImage(context),
-          icon: const Icon(Icons.camera_alt, size: 18),
-          label: const Text('Alterar'),
+          onPressed: controller.isUploadingProfilePicture 
+              ? null 
+              : () => _pickImage(context),
+          icon: controller.isUploadingProfilePicture 
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation(Colors.white),
+                  ),
+                )
+              : const Icon(Icons.camera_alt, size: 18),
+          label: Text(controller.isUploadingProfilePicture 
+              ? 'Enviando...' 
+              : 'Alterar'),
           style: ElevatedButton.styleFrom(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           ),
         ),
-        if (imageUrl != null && imageUrl!.isNotEmpty)
+        if (controller.hasProfilePicture && !controller.isUploadingProfilePicture)
           OutlinedButton.icon(
             onPressed: () => _removeImage(context),
             icon: const Icon(Icons.delete, size: 18),
@@ -188,16 +216,18 @@ class ProfileImagePicker extends StatelessWidget {
     );
   }
 
-  void _pickFromCamera() {
-    // TODO: Implementar seleção da câmera
-    // Usar image_picker package
-    _showNotImplemented();
+  void _pickFromCamera() async {
+    final success = await controller.uploadProfilePictureFromCamera();
+    if (success && controller.currentProfilePictureUrl != null) {
+      onImageChanged(controller.currentProfilePictureUrl);
+    }
   }
 
-  void _pickFromGallery() {
-    // TODO: Implementar seleção da galeria
-    // Usar image_picker package
-    _showNotImplemented();
+  void _pickFromGallery() async {
+    final success = await controller.uploadProfilePictureFromGallery();
+    if (success && controller.currentProfilePictureUrl != null) {
+      onImageChanged(controller.currentProfilePictureUrl);
+    }
   }
 
   void _removeImage(BuildContext context) {
@@ -214,6 +244,7 @@ class ProfileImagePicker extends StatelessWidget {
           TextButton(
             onPressed: () {
               Navigator.pop(context);
+              controller.clearProfilePictureError();
               onImageChanged(null);
             },
             style: TextButton.styleFrom(foregroundColor: Colors.red),
@@ -224,8 +255,50 @@ class ProfileImagePicker extends StatelessWidget {
     );
   }
 
-  void _showNotImplemented() {
-    // Placeholder para funcionalidade não implementada
-    // TODO: Remover quando implementar image_picker
+  Widget _buildUploadingOverlay() {
+    return Positioned.fill(
+      child: Container(
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Colors.black.withOpacity(0.5),
+        ),
+        child: const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation(Colors.white),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildErrorMessage(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: Colors.red.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.withOpacity(0.3)),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.error_outline, color: Colors.red[700], size: 16),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              controller.profilePictureError,
+              style: TextStyle(
+                color: Colors.red[700],
+                fontSize: 12,
+              ),
+            ),
+          ),
+          InkWell(
+            onTap: controller.clearProfilePictureError,
+            child: Icon(Icons.close, color: Colors.red[700], size: 16),
+          ),
+        ],
+      ),
+    );
   }
 }

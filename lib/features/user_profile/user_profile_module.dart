@@ -11,6 +11,8 @@ import 'domain/usecases/get_user_profile.dart';
 import 'domain/usecases/get_user_profile_by_user_id.dart';
 import 'domain/usecases/update_user_profile.dart';
 import 'presentation/controllers/user_profile_controller.dart';
+import 'presentation/controllers/user_type_selection_controller.dart';
+import 'presentation/pages/user_type_selection_screen.dart';
 
 /// Módulo da feature User Profile
 /// 
@@ -70,12 +72,24 @@ class UserProfileModule extends Module {
         updateUserProfile: i.get<UpdateUserProfile>(),
       ),
     );
+
+    i.addLazySingleton<UserTypeSelectionController>(
+      () => UserTypeSelectionController(
+        userProfileController: i.get<UserProfileController>(),
+        authController: Modular.get(), // Get from AppModule
+      ),
+    );
   }
 
   @override
   void routes(RouteManager r) {
-    // TODO: Adicionar rotas quando as páginas forem implementadas
-    // Exemplo:
+    // Rota para seleção de tipo de usuário
+    r.child(
+      '/user-type-selection',
+      child: (context) => const UserTypeSelectionScreen(),
+    );
+
+    // TODO: Adicionar outras rotas quando implementadas
     // r.child(
     //   '/profile',
     //   child: (context) => const UserProfilePage(),
@@ -84,11 +98,6 @@ class UserProfileModule extends Module {
     // r.child(
     //   '/profile/edit',
     //   child: (context) => const EditUserProfilePage(),
-    // );
-    //
-    // r.child(
-    //   '/profile/create',
-    //   child: (context) => const CreateUserProfilePage(),
     // );
   }
 }

@@ -189,13 +189,13 @@ class ProfessionalCalendarScreen extends StatelessWidget {
             'Funcionalidade de criar agendamento para $selectedDate em desenvolvimento',
             snackPosition: SnackPosition.BOTTOM,
             duration: const Duration(seconds: 3),
-            backgroundColor: Colors.deepPurple.withOpacity(0.9),
+            backgroundColor: Colors.deepPurple.withValues(alpha: 0.9),
             colorText: Colors.white,
           );
         },
         backgroundColor: Colors.deepPurple,
-        child: const Icon(Icons.add, color: Colors.white),
         tooltip: 'Novo Agendamento',
+        child: const Icon(Icons.add, color: Colors.white),
       ),
     );
   }

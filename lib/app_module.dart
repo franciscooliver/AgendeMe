@@ -8,6 +8,7 @@ import 'features/auth/auth_module.dart';
 import 'features/auth/data/datasources/auth_remote_datasource.dart';
 import 'features/professional/professional_module.dart';
 import 'features/user_profile/user_profile_module.dart';
+import 'features/home/presentation/pages/client_dashboard_screen.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/domain/usecases/get_current_user_usecase.dart';
@@ -16,8 +17,6 @@ import 'features/auth/domain/usecases/sign_out_usecase.dart';
 import 'features/auth/domain/usecases/sign_up_usecase.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
 import 'features/auth/presentation/pages/auth_wrapper_page.dart';
-import 'features/user_profile/presentation/controllers/user_type_selection_controller.dart';
-import 'features/user_profile/presentation/controllers/user_profile_controller.dart';
 
 class AppModule extends Module {
   @override
@@ -56,10 +55,7 @@ class AppModule extends Module {
         ));
 
     // UserTypeSelectionController (global scope - needs auth and user profile)
-    i.addLazySingleton(() => UserTypeSelectionController(
-          userProfileController: Modular.get<UserProfileController>(),
-          authController: i(),
-        ));
+    // Will be injected after UserProfileModule is loaded
   }
 
   @override
@@ -72,6 +68,9 @@ class AppModule extends Module {
     
     // Rotas de perfil de usuário
     r.module('/user-profile', module: UserProfileModule());
+    
+    // Dashboard do cliente
+    r.child('/client-dashboard', child: (context) => const ClientDashboardScreen());
     
     // Rota inicial - wrapper que verifica autenticação
     r.child('/', child: (context) => const AuthWrapperPage());

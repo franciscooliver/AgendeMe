@@ -29,12 +29,16 @@ class UserProfileController extends GetxController {
   final RxBool _isLoading = false.obs;
   final RxString _errorMessage = ''.obs;
   final RxBool _hasProfile = false.obs;
+  final RxBool _lastOperationSuccess = false.obs;
+  final RxString _lastSuccessMessage = ''.obs;
 
   // Getters
   UserProfileEntity? get userProfile => _userProfile.value;
   bool get isLoading => _isLoading.value;
   String get errorMessage => _errorMessage.value;
   bool get hasProfile => _hasProfile.value;
+  bool get lastOperationSuccess => _lastOperationSuccess.value;
+  String get lastSuccessMessage => _lastSuccessMessage.value;
 
   /// Carrega o perfil do usuário pelo userId do Firebase Auth
   Future<void> loadUserProfile(String userId) async {
@@ -105,32 +109,31 @@ class UserProfileController extends GetxController {
 
       return result.fold(
         (failure) {
+          print('❌ Falha na criação do perfil: ${failure.message}');
           _errorMessage.value = failure.message;
-          Get.snackbar(
-            'Erro',
-            failure.message,
-            snackPosition: SnackPosition.BOTTOM,
-          );
+          _hasProfile.value = false;
+          _userProfile.value = null;
+          _lastOperationSuccess.value = false;
+          _lastSuccessMessage.value = '';
           return false;
         },
         (createdProfile) {
+          print('✅ Perfil criado com sucesso: ${createdProfile.id}');
           _userProfile.value = createdProfile;
           _hasProfile.value = true;
-          Get.snackbar(
-            'Sucesso',
-            'Perfil criado com sucesso!',
-            snackPosition: SnackPosition.BOTTOM,
-          );
+          _errorMessage.value = '';
+          _lastOperationSuccess.value = true;
+          _lastSuccessMessage.value = 'Perfil criado com sucesso!';
           return true;
         },
       );
     } catch (e) {
+      print('💥 Erro inesperado na criação do perfil: $e');
       _errorMessage.value = 'Erro inesperado ao criar perfil: $e';
-      Get.snackbar(
-        'Erro',
-        'Erro inesperado ao criar perfil',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      _hasProfile.value = false;
+      _userProfile.value = null;
+      _lastOperationSuccess.value = false;
+      _lastSuccessMessage.value = '';
       return false;
     } finally {
       _isLoading.value = false;
@@ -177,33 +180,53 @@ class UserProfileController extends GetxController {
         UpdateUserProfileParams(userProfile: updatedProfile),
       );
 
-      return result.fold(
+      bool success = false;
+      String message = '';
+      
+      result.fold(
         (failure) {
           _errorMessage.value = failure.message;
-          Get.snackbar(
-            'Erro',
-            failure.message,
-            snackPosition: SnackPosition.BOTTOM,
-          );
-          return false;
+          message = failure.message;
+          success = false;
         },
         (updatedProfileResult) {
           _userProfile.value = updatedProfileResult;
-          Get.snackbar(
-            'Sucesso',
-            'Perfil atualizado com sucesso!',
-            snackPosition: SnackPosition.BOTTOM,
-          );
-          return true;
+          message = 'Perfil atualizado com sucesso!';
+          success = true;
         },
       );
+
+      // Mostrar feedback após o fold para evitar problemas com GetX
+      try {
+        if (success) {
+          Get.snackbar(
+            'Sucesso',
+            message,
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        } else {
+          Get.snackbar(
+            'Erro',
+            message,
+            snackPosition: SnackPosition.BOTTOM,
+          );
+        }
+      } catch (e) {
+        print('⚠️ Erro ao mostrar snackbar: $e');
+      }
+
+      return success;
     } catch (e) {
       _errorMessage.value = 'Erro inesperado ao atualizar perfil: $e';
-      Get.snackbar(
-        'Erro',
-        'Erro inesperado ao atualizar perfil',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      try {
+        Get.snackbar(
+          'Erro',
+          'Erro inesperado ao atualizar perfil',
+          snackPosition: SnackPosition.BOTTOM,
+        );
+      } catch (snackbarError) {
+        print('⚠️ Erro ao mostrar snackbar de erro: $snackbarError');
+      }
       return false;
     } finally {
       _isLoading.value = false;
@@ -215,12 +238,26 @@ class UserProfileController extends GetxController {
     _errorMessage.value = '';
   }
 
+  /// Limpa mensagens de sucesso
+  void clearSuccess() {
+    _lastOperationSuccess.value = false;
+    _lastSuccessMessage.value = '';
+  }
+
+  /// Limpa todos os feedback (erro e sucesso)
+  void clearFeedback() {
+    clearError();
+    clearSuccess();
+  }
+
   /// Limpa estado do controller
   void clearState() {
     _userProfile.value = null;
     _hasProfile.value = false;
     _errorMessage.value = '';
     _isLoading.value = false;
+    _lastOperationSuccess.value = false;
+    _lastSuccessMessage.value = '';
   }
 
   /// Verifica se o usuário tem informações básicas completas

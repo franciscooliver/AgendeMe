@@ -13,14 +13,22 @@ import 'user_profile_controller.dart';
 /// - Coordenar navegação para dashboard apropriado
 /// - Tratar erros e estados de loading
 class UserTypeSelectionController extends GetxController {
-  final UserProfileController _userProfileController;
-  final AuthController _authController;
+  late final UserProfileController _userProfileController;
+  late final AuthController _authController;
 
   UserTypeSelectionController({
-    required UserProfileController userProfileController,
-    required AuthController authController,
-  })  : _userProfileController = userProfileController,
-        _authController = authController;
+    UserProfileController? userProfileController,
+    AuthController? authController,
+  }) {
+    try {
+      _userProfileController = userProfileController ?? Modular.get<UserProfileController>();
+      _authController = authController ?? Modular.get<AuthController>();
+      print('✅ UserTypeSelectionController inicializado com sucesso');
+    } catch (e) {
+      print('❌ Erro ao inicializar UserTypeSelectionController: $e');
+      rethrow;
+    }
+  }
 
   // Estado reativo
   final Rxn<UserType> _selectedUserType = Rxn<UserType>();
@@ -41,41 +49,57 @@ class UserTypeSelectionController extends GetxController {
 
   /// Cria o perfil inicial com o tipo selecionado
   Future<void> createProfile() async {
+    print('🚀 CreateProfile iniciado');
+    
     if (_selectedUserType.value == null) {
+      print('❌ Erro: Nenhum tipo selecionado');
       _errorMessage.value = 'Por favor, selecione um tipo de usuário';
       return;
     }
 
+    print('✅ Tipo selecionado: ${_selectedUserType.value}');
+
     final currentUser = _authController.currentUser;
     if (currentUser == null) {
+      print('❌ Erro: Usuário não encontrado');
       _errorMessage.value = 'Usuário não encontrado. Faça login novamente.';
       return;
     }
 
+    print('✅ Usuário atual: ${currentUser.email}');
+
     try {
+      print('🔄 Iniciando loading...');
       _isLoading.value = true;
       _errorMessage.value = '';
 
+      print('📝 Criando perfil básico...');
       // Criar perfil básico
       final success = await _userProfileController.createProfile(
         userId: currentUser.id,
-        name: currentUser.displayName ?? '',
+        name: currentUser.displayName ?? currentUser.email.split('@')[0],
         email: currentUser.email,
         userType: _selectedUserType.value!,
       );
 
+      print('✅ Resultado da criação: $success');
+
       if (success) {
-        // Navegação baseada no tipo de usuário selecionado
-        await _navigateToAppropiateDashboard();
+        print('✅ Perfil criado com sucesso! A UI irá observar e navegar automaticamente.');
+        // A navegação será feita pela UI ao observar o estado de sucesso
+        // Não fazemos navegação aqui para evitar conflitos
+      } else {
+        print('❌ Falha na criação do perfil');
+        // Estado de erro é gerenciado pelo UserProfileController
+        // A UI irá observar e mostrar feedback adequado
       }
     } catch (e) {
+      print('💥 Erro na criação do perfil: $e');
       _errorMessage.value = 'Erro inesperado: $e';
-      Get.snackbar(
-        'Erro',
-        'Ocorreu um erro ao criar seu perfil. Tente novamente.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      // Estado de erro é gerenciado aqui e pelo UserProfileController
+      // A UI irá observar e mostrar feedback adequado
     } finally {
+      print('⏹️ Finalizando loading...');
       _isLoading.value = false;
     }
   }
@@ -88,24 +112,14 @@ class UserTypeSelectionController extends GetxController {
       switch (_selectedUserType.value!) {
         case UserType.client:
           // TODO: Navegar para dashboard do cliente quando implementado
-          Get.snackbar(
-            'Bem-vindo!',
-            'Perfil de cliente criado com sucesso! Dashboard em desenvolvimento.',
-            snackPosition: SnackPosition.BOTTOM,
-            duration: const Duration(seconds: 3),
-          );
+          print('✅ Navegando para dashboard do cliente');
           // Por enquanto, ir para home
           Modular.to.pushReplacementNamed('/');
           break;
           
         case UserType.professional:
           // Navegar para calendário profissional
-          Get.snackbar(
-            'Bem-vindo!',
-            'Perfil profissional criado com sucesso! Configure sua agenda.',
-            snackPosition: SnackPosition.BOTTOM,
-            duration: const Duration(seconds: 3),
-          );
+          print('✅ Navegando para calendário profissional');
           Modular.to.pushReplacementNamed('/professional/calendar');
           break;
       }
@@ -131,18 +145,12 @@ class UserTypeSelectionController extends GetxController {
         // Navegar para login
         Modular.to.pushReplacementNamed('/auth/login');
       } else {
-        Get.snackbar(
-          'Erro',
-          'Não foi possível fazer logout. Tente novamente.',
-          snackPosition: SnackPosition.BOTTOM,
-        );
+        print('❌ Erro ao fazer logout');
+        _errorMessage.value = 'Não foi possível fazer logout. Tente novamente.';
       }
     } catch (e) {
-      Get.snackbar(
-        'Erro',
-        'Erro inesperado ao fazer logout.',
-        snackPosition: SnackPosition.BOTTOM,
-      );
+      print('💥 Erro inesperado ao fazer logout: $e');
+      _errorMessage.value = 'Erro inesperado ao fazer logout.';
     } finally {
       _isLoading.value = false;
     }

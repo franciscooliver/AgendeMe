@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 
 import '../../domain/entities/user_type.dart';
 import '../controllers/user_type_selection_controller.dart';
+import '../controllers/user_profile_controller.dart';
 
 /// Tela para seleção do tipo de usuário após primeiro login
 /// 
@@ -14,13 +15,67 @@ class UserTypeSelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Get controller from global scope (AppModule)
-    final controller = Modular.get<UserTypeSelectionController>();
+    // Get controller from UserProfileModule scope
+    late final UserTypeSelectionController controller;
+    late final UserProfileController profileController;
+    
+    try {
+      controller = Modular.get<UserTypeSelectionController>();
+      profileController = Modular.get<UserProfileController>();
+      print('✅ Controllers obtidos com sucesso');
+    } catch (e) {
+      print('❌ Erro ao obter controllers: $e');
+      return Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              const Text('Erro ao carregar controlador'),
+              const SizedBox(height: 8),
+              Text('$e'),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => Modular.to.pushReplacementNamed('/auth/login'),
+                child: const Text('Voltar ao Login'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: SafeArea(
         child: Obx(() {
+          // Observar sucesso da criação do perfil para navegação direta
+          if (profileController.lastOperationSuccess) {
+            // Navegar direto após sucesso
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              profileController.clearSuccess();
+              _navigateAfterSuccess(controller.selectedUserType!);
+            });
+          }
+
+          // Observar erros do controller principal ou do perfil
+          final hasError = controller.errorMessage.isNotEmpty || 
+                         profileController.errorMessage.isNotEmpty;
+          
+          if (hasError && !controller.isLoading) {
+            final errorMessage = controller.errorMessage.isNotEmpty 
+                ? controller.errorMessage 
+                : profileController.errorMessage;
+                
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              _showErrorDialog(context, errorMessage, () {
+                controller.clearError();
+                profileController.clearError();
+              });
+            });
+          }
+
           if (controller.isLoading) {
             return const _LoadingView();
           }
@@ -77,11 +132,49 @@ class UserTypeSelectionScreen extends StatelessWidget {
                 const SizedBox(height: 16),
                 
                 // Link de logout
-                _LogoutLink(),
+                const _LogoutLink(),
               ],
             ),
           );
         }),
+      ),
+    );
+  }
+
+  /// Navega após sucesso na criação do perfil
+  void _navigateAfterSuccess(UserType userType) {
+    print('🚀 Navegando após sucesso para tipo: $userType');
+    
+    switch (userType) {
+      case UserType.client:
+        print('✅ Navegando para dashboard do cliente');
+        Modular.to.pushReplacementNamed('/client-dashboard');
+        break;
+        
+      case UserType.professional:
+        print('✅ Navegando para calendário profissional');
+        Modular.to.pushReplacementNamed('/professional/calendar');
+        break;
+    }
+  }
+
+  /// Mostra dialog de erro
+  void _showErrorDialog(BuildContext context, String message, VoidCallback onDismiss) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.error, color: Colors.red, size: 48),
+        title: const Text('Erro'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              onDismiss();
+            },
+            child: const Text('Tentar Novamente'),
+          ),
+        ],
       ),
     );
   }
@@ -282,7 +375,10 @@ class _ContinueButton extends StatelessWidget {
       height: 56,
       child: ElevatedButton(
         onPressed: controller.selectedUserType != null
-            ? () => controller.createProfile()
+            ? () {
+                print('🔘 Botão Continuar pressionado');
+                controller.createProfile();
+              }
             : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.deepPurple,
@@ -315,6 +411,8 @@ class _ContinueButton extends StatelessWidget {
 
 /// Link para fazer logout
 class _LogoutLink extends StatelessWidget {
+  const _LogoutLink();
+
   @override
   Widget build(BuildContext context) {
     return TextButton(

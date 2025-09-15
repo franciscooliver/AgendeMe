@@ -94,10 +94,9 @@ class _AuthWrapperPageState extends State<AuthWrapperPage> {
         
         switch (userType) {
           case UserType.client:
-            // TODO: Navegar para dashboard do cliente quando implementado
-            // Por enquanto vai para home
+            // Navegar para dashboard do cliente
             if (mounted) {
-              Navigator.of(context).pushReplacementNamed('/');
+              Modular.to.pushReplacementNamed('/client-dashboard');
             }
             break;
             

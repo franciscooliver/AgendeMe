@@ -7,6 +7,7 @@ import 'core/core.dart';
 import 'features/auth/auth_module.dart';
 import 'features/auth/data/datasources/auth_remote_datasource.dart';
 import 'features/professional/professional_module.dart';
+import 'features/user_profile/user_profile_module.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/domain/usecases/get_current_user_usecase.dart';
@@ -60,6 +61,9 @@ class AppModule extends Module {
     
     // Rotas do profissional
     r.module('/professional', module: ProfessionalModule());
+    
+    // Rotas de perfil de usuário
+    r.module('/user-profile', module: UserProfileModule());
     
     // Rota inicial - wrapper que verifica autenticação
     r.child('/', child: (context) => const AuthWrapperPage());

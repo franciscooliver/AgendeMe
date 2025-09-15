@@ -109,12 +109,15 @@ class HomePage extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               
-              const Card(
+              Card(
                 child: ListTile(
-                  leading: Icon(Icons.calendar_today, color: Colors.blue),
-                  title: Text('Agendamentos'),
-                  subtitle: Text('Gerencie seus compromissos'),
-                  trailing: Icon(Icons.arrow_forward_ios, size: 16),
+                  leading: const Icon(Icons.calendar_today, color: Colors.blue),
+                  title: const Text('Calendário Profissional'),
+                  subtitle: const Text('Visualize e gerencie sua agenda'),
+                  trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                  onTap: () {
+                    Modular.to.pushNamed('/professional/calendar');
+                  },
                 ),
               ),
               const Card(

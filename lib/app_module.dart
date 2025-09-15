@@ -6,6 +6,7 @@ import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'core/core.dart';
 import 'features/auth/auth_module.dart';
 import 'features/auth/data/datasources/auth_remote_datasource.dart';
+import 'features/professional/professional_module.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
 import 'features/auth/domain/repositories/auth_repository.dart';
 import 'features/auth/domain/usecases/get_current_user_usecase.dart';
@@ -56,6 +57,9 @@ class AppModule extends Module {
   void routes(RouteManager r) {
     // Rotas de autenticação
     r.module('/auth', module: AuthModule());
+    
+    // Rotas do profissional
+    r.module('/professional', module: ProfessionalModule());
     
     // Rota inicial - wrapper que verifica autenticação
     r.child('/', child: (context) => const AuthWrapperPage());

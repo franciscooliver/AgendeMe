@@ -15,6 +15,7 @@ class AuthWrapperPage extends StatefulWidget {
 }
 
 class _AuthWrapperPageState extends State<AuthWrapperPage> {
+  bool _hasCheckedProfile = false;
   bool _isCheckingProfile = false;
 
   @override
@@ -23,7 +24,7 @@ class _AuthWrapperPageState extends State<AuthWrapperPage> {
 
     return Obx(() {
       // Se está carregando autenticação, mostrar loading
-      if (authController.isLoading || _isCheckingProfile) {
+      if (authController.isLoading) {
         return const Scaffold(
           body: Center(
             child: Column(
@@ -43,7 +44,12 @@ class _AuthWrapperPageState extends State<AuthWrapperPage> {
 
       // Se está autenticado, verificar perfil e navegar apropriadamente
       if (authController.isAuthenticated) {
-        _checkUserProfileAndNavigate(authController.currentUser!.id);
+        // Só verificar perfil uma vez
+        if (!_hasCheckedProfile && !_isCheckingProfile) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            _checkUserProfileAndNavigate(authController.currentUser!.id);
+          });
+        }
         
         // Mostrar loading enquanto verifica perfil
         return const Scaffold(
@@ -70,7 +76,7 @@ class _AuthWrapperPageState extends State<AuthWrapperPage> {
 
   /// Verifica se o usuário tem perfil e navega para tela apropriada
   Future<void> _checkUserProfileAndNavigate(String userId) async {
-    if (_isCheckingProfile) return; // Evitar múltiplas chamadas
+    if (_isCheckingProfile || _hasCheckedProfile) return; // Evitar múltiplas chamadas
 
     setState(() {
       _isCheckingProfile = true;
@@ -90,42 +96,35 @@ class _AuthWrapperPageState extends State<AuthWrapperPage> {
           case UserType.client:
             // TODO: Navegar para dashboard do cliente quando implementado
             // Por enquanto vai para home
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                Navigator.of(context).pushReplacementNamed('/');
-              }
-            });
+            if (mounted) {
+              Navigator.of(context).pushReplacementNamed('/');
+            }
             break;
             
           case UserType.professional:
             // Navegar para calendário profissional
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                Modular.to.pushReplacementNamed('/professional/calendar');
-              }
-            });
+            if (mounted) {
+              Modular.to.pushReplacementNamed('/professional/calendar');
+            }
             break;
         }
       } else {
         // Usuário não tem perfil, navegar para seleção de tipo
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (mounted) {
-            Modular.to.pushReplacementNamed('/user-profile/user-type-selection');
-          }
-        });
+        if (mounted) {
+          Modular.to.pushReplacementNamed('/user-profile/user-type-selection');
+        }
       }
     } catch (e) {
       // Em caso de erro, assumir que não tem perfil e ir para seleção
       // Log do erro para debug (pode ser removido em produção)
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          Modular.to.pushReplacementNamed('/user-profile/user-type-selection');
-        }
-      });
+      if (mounted) {
+        Modular.to.pushReplacementNamed('/user-profile/user-type-selection');
+      }
     } finally {
       if (mounted) {
         setState(() {
           _isCheckingProfile = false;
+          _hasCheckedProfile = true;
         });
       }
     }

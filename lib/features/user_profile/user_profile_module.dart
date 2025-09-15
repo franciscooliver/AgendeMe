@@ -76,7 +76,7 @@ class UserProfileModule extends Module {
     i.addLazySingleton<UserTypeSelectionController>(
       () => UserTypeSelectionController(
         userProfileController: i.get<UserProfileController>(),
-        authController: Modular.get(), // Get from AppModule
+        authController: i.get(), // Get from parent injector
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:get/get.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 import '../../../user_profile/domain/entities/user_type.dart';
 import '../../../user_profile/presentation/controllers/user_profile_controller.dart';
@@ -85,37 +86,57 @@ class _AuthWrapperPageState extends State<AuthWrapperPage> {
     try {
       final userProfileController = Modular.get<UserProfileController>();
       
-      // Tentar carregar perfil do usuário
+      print('🔍 DEBUG: Carregando perfil para userId: $userId');
+      
+      // Primeiro, tentar carregar perfil do usuário
       await userProfileController.loadUserProfile(userId);
       
+      print('🔍 DEBUG: hasProfile = ${userProfileController.hasProfile}');
+      print('🔍 DEBUG: userProfile = ${userProfileController.userProfile}');
+      print('🔍 DEBUG: errorMessage = ${userProfileController.errorMessage}');
+      
+      // Se carregou perfil com sucesso, navegar diretamente
       if (userProfileController.hasProfile && userProfileController.userProfile != null) {
-        // Usuário já tem perfil, navegar para dashboard apropriado
-        final userType = userProfileController.userProfile!.userType;
+        await _navigateToUserDashboard(userProfileController.userProfile!.userType);
+        return;
+      }
+      
+      // Se não carregou, verificar se perfil existe no Firestore
+      print('🔍 DEBUG: Perfil não carregou. Verificando se existe no Firestore...');
+      final exists = await userProfileController.userProfileExists(userId);
+      print('🔍 DEBUG: userProfileExists retornou: $exists');
+      
+      if (exists) {
+        // Perfil existe mas não carregou - tentar busca direta via Firestore
+        print('🔍 DEBUG: PROBLEMA DETECTADO: Perfil existe mas não carregou!');
+        print('🔍 DEBUG: Tentando busca direta no Firestore...');
         
-        switch (userType) {
-          case UserType.client:
-            // Navegar para dashboard do cliente
-            if (mounted) {
-              Modular.to.pushReplacementNamed('/client-dashboard');
-            }
-            break;
-            
-          case UserType.professional:
-            // Navegar para calendário profissional
-            if (mounted) {
-              Modular.to.pushReplacementNamed('/professional/calendar');
-            }
-            break;
+        final profileData = await _getProfileDirectlyFromFirestore(userId);
+        if (profileData != null) {
+          print('🔍 DEBUG: Perfil encontrado via busca direta! Tipo: ${profileData['userType']}');
+          await _navigateToUserDashboard(profileData['userType']);
+          return;
         }
-      } else {
-        // Usuário não tem perfil, navegar para seleção de tipo
-        if (mounted) {
-          Modular.to.pushReplacementNamed('/user-profile/user-type-selection');
+        
+        // Se ainda assim não conseguiu, tentar reload forçado uma vez
+        print('🔍 DEBUG: Tentando reload forçado...');
+        await userProfileController.loadUserProfile(userId);
+        
+        if (userProfileController.hasProfile && userProfileController.userProfile != null) {
+          await _navigateToUserDashboard(userProfileController.userProfile!.userType);
+          return;
         }
       }
+      
+      // Se chegou até aqui, usuário realmente não tem perfil válido
+      print('🔍 DEBUG: Usuário não tem perfil válido. Navegando para seleção de tipo.');
+      if (mounted) {
+        Modular.to.pushReplacementNamed('/user-profile/user-type-selection');
+      }
+      
     } catch (e) {
+      print('🔍 DEBUG: Erro durante verificação de perfil: $e');
       // Em caso de erro, assumir que não tem perfil e ir para seleção
-      // Log do erro para debug (pode ser removido em produção)
       if (mounted) {
         Modular.to.pushReplacementNamed('/user-profile/user-type-selection');
       }
@@ -126,6 +147,75 @@ class _AuthWrapperPageState extends State<AuthWrapperPage> {
           _hasCheckedProfile = true;
         });
       }
+    }
+  }
+
+  /// Navega para o dashboard apropriado baseado no tipo de usuário
+  Future<void> _navigateToUserDashboard(UserType userType) async {
+    print('🔍 DEBUG: Usuario tem perfil! Tipo: $userType');
+    
+    if (!mounted) return;
+    
+    switch (userType) {
+      case UserType.client:
+        print('🔍 DEBUG: Navegando para client-dashboard');
+        Modular.to.pushReplacementNamed('/client-dashboard');
+        break;
+        
+      case UserType.professional:
+        print('🔍 DEBUG: Navegando para professional/calendar');
+        Modular.to.pushReplacementNamed('/professional/calendar');
+        break;
+    }
+  }
+
+  /// Busca perfil diretamente no Firestore quando o método normal falha
+  Future<Map<String, dynamic>?> _getProfileDirectlyFromFirestore(String userId) async {
+    try {
+      // Importar Firestore
+      final firestore = FirebaseFirestore.instance;
+      
+      print('🔍 DEBUG: Buscando diretamente no Firestore para userId: $userId');
+      
+      final querySnapshot = await firestore
+          .collection('user_profiles')
+          .where('user_id', isEqualTo: userId)
+          .limit(1)
+          .get();
+      
+      print('🔍 DEBUG: Busca direta encontrou ${querySnapshot.docs.length} documentos');
+      
+      if (querySnapshot.docs.isNotEmpty) {
+        final doc = querySnapshot.docs.first;
+        final data = doc.data();
+        
+        print('🔍 DEBUG: Dados encontrados: ${data['name']} - ${data['user_type']}');
+        
+        // Converter user_type string para UserType enum
+        UserType userType;
+        switch (data['user_type']) {
+          case 'client':
+            userType = UserType.client;
+            break;
+          case 'professional':
+            userType = UserType.professional;
+            break;
+          default:
+            print('🔍 DEBUG: Tipo de usuário desconhecido: ${data['user_type']}');
+            return null;
+        }
+        
+        return {
+          'userType': userType,
+          'name': data['name'],
+          'email': data['email'],
+        };
+      }
+      
+      return null;
+    } catch (e) {
+      print('🔍 DEBUG: Erro na busca direta no Firestore: $e');
+      return null;
     }
   }
 }

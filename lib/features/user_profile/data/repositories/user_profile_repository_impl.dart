@@ -34,14 +34,30 @@ class UserProfileRepositoryImpl implements UserProfileRepository {
 
   @override
   Future<Either<Failure, UserProfileEntity>> getUserProfileByUserId(String userId) async {
+    print('🔍 Repository: getUserProfileByUserId iniciado para $userId');
     if (await networkInfo.isConnected) {
       try {
+        print('🔍 Repository: Chamando remoteDataSource.getUserProfileByUserId');
         final userProfileModel = await remoteDataSource.getUserProfileByUserId(userId);
+        print('🔍 Repository: Resultado do datasource: $userProfileModel');
+        
+        if (userProfileModel == null) {
+          print('🔍 Repository: Profile não encontrado, retornando NotFoundFailure');
+          return Left(NotFoundFailure(
+            message: 'Perfil de usuário não encontrado',
+            code: 'profile_not_found',
+            details: {'userId': userId},
+          ));
+        }
+        
+        print('🔍 Repository: Profile encontrado, convertendo para entity');
         return Right(userProfileModel.toEntity());
       } catch (e) {
+        print('🔍 Repository: Exception capturada: $e');
         return Left(_handleException(e));
       }
     } else {
+      print('🔍 Repository: Sem conexão com internet');
       return Left(NetworkFailure(message: 'Sem conexão com a internet'));
     }
   }

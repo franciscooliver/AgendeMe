@@ -5,7 +5,7 @@ import '../models/user_profile_model.dart';
 /// Interface abstrata para data source remoto de perfis de usuário
 abstract class UserProfileRemoteDataSource {
   Future<UserProfileModel> getUserProfile(String id);
-  Future<UserProfileModel> getUserProfileByUserId(String userId);
+  Future<UserProfileModel?> getUserProfileByUserId(String userId);
   Future<UserProfileModel> createUserProfile(UserProfileModel userProfile);
   Future<UserProfileModel> updateUserProfile(UserProfileModel userProfile);
   Future<void> deleteUserProfile(String id);
@@ -41,20 +41,30 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
   }
 
   @override
-  Future<UserProfileModel> getUserProfileByUserId(String userId) async {
+  Future<UserProfileModel?> getUserProfileByUserId(String userId) async {
     try {
+      print('🔍 DataSource: Buscando perfil para userId: $userId');
+      print('🔍 DataSource: Collection: $_collectionName');
+      
       final querySnapshot = await _firestore
           .collection(_collectionName)
           .where('user_id', isEqualTo: userId)
           .limit(1)
           .get();
 
+      print('🔍 DataSource: Query executada. Docs encontrados: ${querySnapshot.docs.length}');
+
       if (querySnapshot.docs.isEmpty) {
-        throw Exception('Perfil de usuário não encontrado');
+        print('🔍 DataSource: Nenhum documento encontrado, retornando null');
+        return null; // Retorna null quando não encontra o perfil
       }
 
-      return UserProfileModel.fromDocumentSnapshot(querySnapshot.docs.first);
+      print('🔍 DataSource: Documento encontrado, convertendo para model');
+      final result = UserProfileModel.fromDocumentSnapshot(querySnapshot.docs.first);
+      print('🔍 DataSource: Model criado: ${result.name} - ${result.userType}');
+      return result;
     } catch (e) {
+      print('🔍 DataSource: Exception capturada: $e');
       throw Exception('Erro ao buscar perfil por userId: $e');
     }
   }

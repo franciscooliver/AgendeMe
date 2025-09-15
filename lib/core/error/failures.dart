@@ -100,3 +100,12 @@ class FirebaseFailure extends Failure {
     super.details,
   });
 }
+
+/// Falha quando um recurso não é encontrado (diferente de erro de sistema)
+class NotFoundFailure extends Failure {
+  const NotFoundFailure({
+    required super.message,
+    super.code,
+    super.details,
+  });
+}

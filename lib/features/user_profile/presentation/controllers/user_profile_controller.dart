@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+import '../../../../core/core.dart';
 import '../../domain/entities/user_profile_entity.dart';
 import '../../domain/entities/user_type.dart';
 import '../../domain/usecases/create_user_profile.dart';
@@ -54,6 +55,7 @@ class UserProfileController extends GetxController {
   /// Carrega o perfil do usuário pelo userId do Firebase Auth
   Future<void> loadUserProfile(String userId) async {
     try {
+      print('🔍 UserProfileController: Iniciando loadUserProfile para $userId');
       _isLoading.value = true;
       _errorMessage.value = '';
 
@@ -61,18 +63,35 @@ class UserProfileController extends GetxController {
         GetUserProfileByUserIdParams(userId: userId),
       );
 
+      print('🔍 UserProfileController: Resultado obtido do usecase');
+      
       result.fold(
         (failure) {
-          _errorMessage.value = failure.message;
-          _hasProfile.value = false;
-          _userProfile.value = null;
+          print('🔍 UserProfileController: Failure recebido: ${failure.runtimeType} - ${failure.message}');
+          if (failure is NotFoundFailure) {
+            // Usuário genuinamente não tem perfil - não é erro
+            print('🔍 UserProfileController: NotFoundFailure - usuário não tem perfil');
+            _hasProfile.value = false;
+            _userProfile.value = null;
+            _errorMessage.value = ''; // Limpar erro pois não é um erro real
+          } else {
+            // Erro real durante a busca do perfil
+            print('🔍 UserProfileController: Erro real: ${failure.message}');
+            _errorMessage.value = failure.message;
+            _hasProfile.value = false;
+            _userProfile.value = null;
+          }
         },
         (profile) {
+          print('🔍 UserProfileController: Perfil encontrado: ${profile.name} - ${profile.userType}');
           _userProfile.value = profile;
           _hasProfile.value = true;
         },
       );
+      
+      print('🔍 UserProfileController: Estado final - hasProfile: ${_hasProfile.value}, errorMessage: ${_errorMessage.value}');
     } catch (e) {
+      print('🔍 UserProfileController: Exception capturada: $e');
       _errorMessage.value = 'Erro inesperado ao carregar perfil: $e';
       _hasProfile.value = false;
       _userProfile.value = null;
@@ -351,6 +370,24 @@ class UserProfileController extends GetxController {
   /// Verifica se o usuário tem foto de perfil
   bool get hasProfilePicture => currentProfilePictureUrl != null && 
                                currentProfilePictureUrl!.isNotEmpty;
+
+  /// Verifica se existe um perfil para o userId (para debug)
+  Future<bool> userProfileExists(String userId) async {
+    try {
+      // Usar o repository diretamente para verificar existência
+      final result = await getUserProfileByUserId(
+        GetUserProfileByUserIdParams(userId: userId),
+      );
+      
+      return result.fold(
+        (failure) => false, // Se deu failure, consideramos que não existe
+        (profile) => true,  // Se encontrou profile, existe
+      );
+    } catch (e) {
+      print('🔍 UserProfileController: Erro em userProfileExists: $e');
+      return false;
+    }
+  }
 
   /// Mostra feedback de sucesso (evita problemas com GetX)
   void _showSuccessFeedback(String title, String message) {

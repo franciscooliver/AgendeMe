@@ -67,7 +67,7 @@ node_modules/
 # Task Master
 .taskmaster/
 .claude/
-.CLAUDE.md
+CLAUDE.md
 .mcp.json
 .cursor/
 

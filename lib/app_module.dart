@@ -16,6 +16,8 @@ import 'features/auth/domain/usecases/sign_out_usecase.dart';
 import 'features/auth/domain/usecases/sign_up_usecase.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
 import 'features/auth/presentation/pages/auth_wrapper_page.dart';
+import 'features/user_profile/presentation/controllers/user_type_selection_controller.dart';
+import 'features/user_profile/presentation/controllers/user_profile_controller.dart';
 
 class AppModule extends Module {
   @override
@@ -51,6 +53,12 @@ class AppModule extends Module {
           signUpUseCase: i(),
           signOutUseCase: i(),
           getCurrentUserUseCase: i(),
+        ));
+
+    // UserTypeSelectionController (global scope - needs auth and user profile)
+    i.addLazySingleton(() => UserTypeSelectionController(
+          userProfileController: Modular.get<UserProfileController>(),
+          authController: i(),
         ));
   }
 

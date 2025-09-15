@@ -11,7 +11,6 @@ import 'domain/usecases/get_user_profile.dart';
 import 'domain/usecases/get_user_profile_by_user_id.dart';
 import 'domain/usecases/update_user_profile.dart';
 import 'presentation/controllers/user_profile_controller.dart';
-import 'presentation/controllers/user_type_selection_controller.dart';
 import 'presentation/pages/user_type_selection_screen.dart';
 
 /// Módulo da feature User Profile
@@ -70,13 +69,6 @@ class UserProfileModule extends Module {
         getUserProfileByUserId: i.get<GetUserProfileByUserId>(),
         createUserProfile: i.get<CreateUserProfile>(),
         updateUserProfile: i.get<UpdateUserProfile>(),
-      ),
-    );
-
-    i.addLazySingleton<UserTypeSelectionController>(
-      () => UserTypeSelectionController(
-        userProfileController: i.get<UserProfileController>(),
-        authController: i.get(), // Get from parent injector
       ),
     );
   }

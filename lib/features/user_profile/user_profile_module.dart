@@ -11,7 +11,10 @@ import 'domain/usecases/get_user_profile.dart';
 import 'domain/usecases/get_user_profile_by_user_id.dart';
 import 'domain/usecases/update_user_profile.dart';
 import 'presentation/controllers/user_profile_controller.dart';
+import 'presentation/controllers/user_type_selection_controller.dart';
 import 'presentation/pages/user_type_selection_screen.dart';
+import 'presentation/pages/user_profile_view_page.dart';
+import 'presentation/pages/user_profile_edit_page.dart';
 
 /// Módulo da feature User Profile
 /// 
@@ -74,6 +77,11 @@ class UserProfileModule extends Module {
         updateUserProfile: i.get<UpdateUserProfile>(),
       ),
     );
+
+    // UserTypeSelectionController (needs both auth and user profile)
+    i.addLazySingleton<UserTypeSelectionController>(
+      () => UserTypeSelectionController(),
+    );
   }
 
   @override
@@ -84,15 +92,20 @@ class UserProfileModule extends Module {
       child: (context) => const UserTypeSelectionScreen(),
     );
 
-    // TODO: Adicionar outras rotas quando implementadas
-    // r.child(
-    //   '/profile',
-    //   child: (context) => const UserProfilePage(),
-    // );
-    // 
-    // r.child(
-    //   '/profile/edit',
-    //   child: (context) => const EditUserProfilePage(),
-    // );
+    // Rota para visualização do perfil
+    r.child(
+      '/profile',
+      child: (context) => UserProfileViewPage(
+        userId: r.args.queryParams['userId'],
+      ),
+    );
+    
+    // Rota para edição/criação do perfil
+    r.child(
+      '/profile/edit',
+      child: (context) => UserProfileEditPage(
+        userId: r.args.queryParams['userId'],
+      ),
+    );
   }
 }

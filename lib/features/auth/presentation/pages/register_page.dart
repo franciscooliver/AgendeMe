@@ -17,7 +17,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
-  final _authController = Get.find<AuthController>();
+  final _authController = Modular.get<AuthController>();
 
   @override
   void dispose() {

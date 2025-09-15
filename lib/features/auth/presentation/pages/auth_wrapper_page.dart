@@ -11,7 +11,7 @@ class AuthWrapperPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authController = Get.find<AuthController>();
+    final authController = Modular.get<AuthController>();
 
     return Obx(() {
       // Se está carregando, mostrar loading

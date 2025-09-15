@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 import 'package:get/get.dart';
 
 import '../controllers/auth_controller.dart';
@@ -25,7 +26,7 @@ class AuthFormWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final authController = Get.find<AuthController>();
+    final authController = Modular.get<AuthController>();
 
     return Form(
       key: formKey,

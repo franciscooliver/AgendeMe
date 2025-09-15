@@ -14,6 +14,7 @@ class UserTypeSelectionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Get controller from global scope (AppModule)
     final controller = Modular.get<UserTypeSelectionController>();
 
     return Scaffold(

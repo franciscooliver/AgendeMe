@@ -26,6 +26,9 @@ class UserProfileModule extends Module {
   void binds(Injector i) {
     // External dependencies
     i.addLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
+    
+    // NetworkInfo from parent module (AppModule)
+    // Using Modular.get to access parent scope
 
     // Data Sources
     i.addLazySingleton<UserProfileRemoteDataSource>(
@@ -38,7 +41,7 @@ class UserProfileModule extends Module {
     i.addLazySingleton<UserProfileRepository>(
       () => UserProfileRepositoryImpl(
         remoteDataSource: i.get<UserProfileRemoteDataSource>(),
-        networkInfo: i.get<NetworkInfo>(),
+        networkInfo: Modular.get<NetworkInfo>(), // Access from parent scope (AppModule)
       ),
     );
 

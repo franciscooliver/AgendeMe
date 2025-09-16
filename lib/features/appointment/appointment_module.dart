@@ -7,7 +7,9 @@ import 'data/repositories/appointment_repository_impl.dart';
 import 'domain/repositories/appointment_repository.dart';
 import 'domain/usecases/create_appointment_usecase.dart';
 import 'presentation/controllers/appointment_booking_controller.dart';
+import 'presentation/controllers/appointment_form_controller.dart';
 import 'presentation/pages/appointment_confirmation_page.dart';
+import 'presentation/pages/appointment_form_page.dart';
 
 /// Módulo da feature Appointment
 /// 
@@ -56,6 +58,16 @@ class AppointmentModule extends Module {
         createAppointmentUseCase: i.get<CreateAppointmentUseCase>(),
       ),
     );
+
+    i.addLazySingleton<AppointmentFormController>(
+      () => AppointmentFormController(
+        getClientsUseCase: Modular.get(),
+        getServicesUseCase: Modular.get(),
+        getUserProfileUseCase: Modular.get(),
+        createAppointmentUseCase: i.get<CreateAppointmentUseCase>(),
+        appointmentRepository: i.get<AppointmentRepository>(),
+      ),
+    );
   }
 
   @override
@@ -68,6 +80,12 @@ class AppointmentModule extends Module {
         service: r.args.data['service'],
         slot: r.args.data['slot'],
       ),
+    );
+
+    // Rota para formulário de agendamento
+    r.child(
+      '/form',
+      child: (context) => const AppointmentFormPage(),
     );
   }
 }

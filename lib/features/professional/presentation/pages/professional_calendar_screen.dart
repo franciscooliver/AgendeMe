@@ -179,22 +179,10 @@ class ProfessionalCalendarScreen extends StatelessWidget {
       )),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          // TODO: Implementar navegação para tela de criação de agendamento
-          final selectedDate = controller.selectedDay != null 
-              ? '${controller.selectedDay!.day}/${controller.selectedDay!.month}/${controller.selectedDay!.year}'
-              : 'hoje';
-          
-          Get.snackbar(
-            'Novo Agendamento',
-            'Funcionalidade de criar agendamento para $selectedDate em desenvolvimento',
-            snackPosition: SnackPosition.BOTTOM,
-            duration: const Duration(seconds: 3),
-            backgroundColor: Colors.deepPurple.withValues(alpha: 0.9),
-            colorText: Colors.white,
-          );
+          Modular.to.pushNamed('/appointments/form');
         },
         backgroundColor: Colors.deepPurple,
-        tooltip: 'Novo Agendamento',
+        tooltip: 'Criar Agendamento',
         child: const Icon(Icons.add, color: Colors.white),
       ),
     );

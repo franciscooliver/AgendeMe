@@ -6,9 +6,12 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 import 'core/core.dart';
+import 'features/appointment/appointment_module.dart';
 import 'features/auth/auth_module.dart';
 import 'features/auth/data/datasources/auth_remote_datasource.dart';
+import 'features/client_management/client_management_module.dart';
 import 'features/professional/professional_module.dart';
+import 'features/services/services_module.dart';
 import 'features/user_profile/user_profile_module.dart';
 import 'features/home/presentation/pages/client_dashboard_screen.dart';
 import 'features/auth/data/repositories/auth_repository_impl.dart';
@@ -150,8 +153,17 @@ class AppModule extends Module {
     // Rotas de autenticação
     r.module('/auth', module: AuthModule());
     
+    // Rotas de agendamentos
+    r.module('/appointments', module: AppointmentModule());
+    
     // Rotas do profissional
     r.module('/professional', module: ProfessionalModule());
+    
+    // Rotas de gerenciamento de clientes
+    r.module('/client-management', module: ClientManagementModule());
+    
+    // Rotas de serviços
+    r.module('/services', module: ServicesModule());
     
     // Rotas de perfil de usuário
     r.module('/user-profile', module: UserProfileModule());

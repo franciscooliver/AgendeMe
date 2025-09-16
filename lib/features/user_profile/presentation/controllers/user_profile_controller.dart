@@ -280,6 +280,12 @@ class UserProfileController extends GetxController {
     clearSuccess();
   }
 
+  /// Atualiza o perfil local (usado por outros controllers)
+  void updateLocalProfile(UserProfileEntity updatedProfile) {
+    _userProfile.value = updatedProfile;
+    _hasProfile.value = true;
+  }
+
   /// Limpa estado do controller
   void clearState() {
     _userProfile.value = null;

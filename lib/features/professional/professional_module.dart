@@ -2,6 +2,8 @@ import 'package:flutter_modular/flutter_modular.dart';
 
 import 'presentation/controllers/professional_calendar_controller.dart';
 import 'presentation/pages/professional_calendar_screen.dart';
+import 'presentation/pages/professional_config_screen.dart';
+import 'presentation/pages/professional_dashboard_screen.dart';
 
 class ProfessionalModule extends Module {
   @override
@@ -11,6 +13,9 @@ class ProfessionalModule extends Module {
       () => ProfessionalCalendarController(),
     );
     
+    // Note: ProfessionalConfigController é criado via Get.put()
+    // nas telas que o utilizam para evitar conflitos de escopo
+    
     // TODO: Adicionar bindings para repositórios, use cases
     // quando forem implementados nas próximas subtarefas
   }
@@ -18,14 +23,24 @@ class ProfessionalModule extends Module {
   @override
   void routes(RouteManager r) {
     r.child(
+      '/dashboard',
+      child: (context) => const ProfessionalDashboardScreen(),
+    );
+
+    r.child(
       '/calendar',
       child: (context) => const ProfessionalCalendarScreen(),
     );
     
-    // Rota padrão que redireciona para o calendário
+    r.child(
+      '/config',
+      child: (context) => const ProfessionalConfigScreen(),
+    );
+    
+    // Rota padrão que redireciona para o dashboard
     r.child(
       '/',
-      child: (context) => const ProfessionalCalendarScreen(),
+      child: (context) => const ProfessionalDashboardScreen(),
     );
   }
 }

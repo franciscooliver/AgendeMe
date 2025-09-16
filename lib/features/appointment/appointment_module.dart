@@ -5,6 +5,9 @@ import '../../core/core.dart';
 import 'data/datasources/appointment_remote_datasource.dart';
 import 'data/repositories/appointment_repository_impl.dart';
 import 'domain/repositories/appointment_repository.dart';
+import 'domain/usecases/create_appointment_usecase.dart';
+import 'presentation/controllers/appointment_booking_controller.dart';
+import 'presentation/pages/appointment_confirmation_page.dart';
 
 /// Módulo da feature Appointment
 /// 
@@ -38,57 +41,33 @@ class AppointmentModule extends Module {
       ),
     );
 
-    // Use Cases - A serem implementados nas próximas tarefas
-    // i.addLazySingleton<CreateAppointmentUseCase>(
-    //   () => CreateAppointmentUseCase(i.get<AppointmentRepository>()),
-    // );
+    // Use Cases
+    i.addLazySingleton<CreateAppointmentUseCase>(
+      () => CreateAppointmentUseCase(repository: i.get<AppointmentRepository>()),
+    );
 
     // i.addLazySingleton<GetAppointmentsUseCase>(
     //   () => GetAppointmentsUseCase(i.get<AppointmentRepository>()),
     // );
 
-    // Controllers - A serem implementados nas próximas tarefas  
-    // i.addLazySingleton<AppointmentController>(
-    //   () => AppointmentController(
-    //     createAppointmentUseCase: i.get<CreateAppointmentUseCase>(),
-    //     getAppointmentsUseCase: i.get<GetAppointmentsUseCase>(),
-    //     appointmentRepository: i.get<AppointmentRepository>(),
-    //   ),
-    // );
+    // Controllers
+    i.addLazySingleton<AppointmentBookingController>(
+      () => AppointmentBookingController(
+        createAppointmentUseCase: i.get<CreateAppointmentUseCase>(),
+      ),
+    );
   }
 
   @override
   void routes(RouteManager r) {
-    // Rotas a serem implementadas nas próximas tarefas
-    
-    // Rota para listagem de agendamentos
-    // r.child(
-    //   '/appointments',
-    //   child: (context) => const AppointmentListPage(),
-    // );
-
-    // Rota para criação de agendamento
-    // r.child(
-    //   '/appointments/create',
-    //   child: (context) => const CreateAppointmentPage(),
-    // );
-
-    // Rota para detalhes do agendamento
-    // r.child(
-    //   '/appointments/:appointmentId',
-    //   child: (context) => AppointmentDetailPage(
-    //     appointmentId: r.args.params['appointmentId']!,
-    //   ),
-    // );
-
-    // Rota padrão temporária (a ser removida quando houver páginas)
-    // r.child(
-    //   '/',
-    //   child: (context) => const Scaffold(
-    //     body: Center(
-    //       child: Text('Appointment Module - Coming Soon'),
-    //     ),
-    //   ),
-    // );
+    // Rota para confirmação de agendamento
+    r.child(
+      '/confirmation',
+      child: (context) => AppointmentConfirmationPage(
+        professional: r.args.data['professional'],
+        service: r.args.data['service'],
+        slot: r.args.data['slot'],
+      ),
+    );
   }
 }

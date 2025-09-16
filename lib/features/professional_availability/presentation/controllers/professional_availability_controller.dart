@@ -150,14 +150,25 @@ class ProfessionalAvailabilityController extends GetxController {
 
   /// Seleciona um slot de tempo disponível
   void selectTimeSlot(AvailableTimeSlotEntity slot) {
-    // TODO: Implementar navegação para tela de confirmação de agendamento
-    // Por enquanto, mostra um snackbar
-    Get.snackbar(
-      'Horário Selecionado',
-      'Você selecionou ${slot.formattedTime}',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
+    if (_professional.value == null || _selectedService.value == null) {
+      Get.snackbar(
+        'Erro',
+        'Dados incompletos. Tente novamente.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+      return;
+    }
+
+    // Navegar para tela de confirmação de agendamento
+    Modular.to.pushNamed(
+      '/appointment/confirmation',
+      arguments: {
+        'professional': _professional.value!,
+        'service': _selectedService.value!,
+        'slot': slot,
+      },
     );
   }
 

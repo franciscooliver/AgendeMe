@@ -11,6 +11,7 @@ import 'features/auth/auth_module.dart';
 import 'features/auth/data/datasources/auth_remote_datasource.dart';
 import 'features/client_management/client_management_module.dart';
 import 'features/professional/professional_module.dart';
+import 'features/professional_availability/professional_availability_module.dart';
 import 'features/professional_search/professional_search_module.dart';
 import 'features/services/services_module.dart';
 import 'features/user_profile/user_profile_module.dart';
@@ -171,6 +172,9 @@ class AppModule extends Module {
     
     // Rotas de busca de profissionais
     r.module('/professional-search', module: ProfessionalSearchModule());
+    
+    // Rotas de disponibilidade de profissionais
+    r.module('/professional-availability', module: ProfessionalAvailabilityModule());
     
     // Dashboard do cliente
     r.child('/client-dashboard', child: (context) => const ClientDashboardScreen());

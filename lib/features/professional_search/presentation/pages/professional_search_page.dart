@@ -317,16 +317,9 @@ class _ProfessionalSearchPageState extends State<ProfessionalSearchPage> {
 
   /// Navega para detalhes do profissional
   void _navigateToProfessionalDetails(UserProfileEntity professional) {
-    // TODO: Implementar navegação para detalhes do profissional
-    // Por enquanto, mostra um snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Visualizar ${professional.name}'),
-        action: SnackBarAction(
-          label: 'OK',
-          onPressed: () {},
-        ),
-      ),
+    // Navegar para a página de horários disponíveis
+    Modular.to.pushNamed(
+      '/professional-availability/availability/${professional.userId}',
     );
   }
 }

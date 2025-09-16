@@ -125,7 +125,7 @@ class _ClientListPageState extends State<ClientListPage> {
                 _buildFilterChip('Todos', ClientCategory.all),
                 _buildFilterChip('Ativos', ClientCategory.active),
                 _buildFilterChip('VIP ⭐', ClientCategory.vip),
-                _buildFilterChip('Novos 🎉', ClientCategory.new_clients),
+                _buildFilterChip('Novos 🎉', ClientCategory.newClients),
                 _buildFilterChip('Frequentes', ClientCategory.frequent),
                 _buildFilterChip('Inativos', ClientCategory.inactive),
               ],
@@ -162,7 +162,7 @@ class _ClientListPageState extends State<ClientListPage> {
         return ClientStatus.active;
       case ClientCategory.vip:
         return ClientStatus.vip;
-      case ClientCategory.new_clients:
+      case ClientCategory.newClients:
         return ClientStatus.newClient;
       case ClientCategory.inactive:
         return ClientStatus.inactive;

@@ -104,31 +104,6 @@ class UserTypeSelectionController extends GetxController {
     }
   }
 
-  /// Navega para o dashboard apropriado baseado no tipo de usuário
-  Future<void> _navigateToAppropiateDashboard() async {
-    if (_selectedUserType.value == null) return;
-
-    try {
-      switch (_selectedUserType.value!) {
-        case UserType.client:
-          // TODO: Navegar para dashboard do cliente quando implementado
-          print('✅ Navegando para dashboard do cliente');
-          // Por enquanto, ir para home
-          Modular.to.pushReplacementNamed('/');
-          break;
-          
-        case UserType.professional:
-          // Navegar para calendário profissional
-          print('✅ Navegando para calendário profissional');
-          Modular.to.pushReplacementNamed('/professional/calendar');
-          break;
-      }
-    } catch (e) {
-      // Log do erro para debug (pode ser removido em produção)
-      // Fallback para home em caso de erro na navegação
-      Modular.to.pushReplacementNamed('/');
-    }
-  }
 
   /// Faz logout do usuário
   Future<void> logout() async {

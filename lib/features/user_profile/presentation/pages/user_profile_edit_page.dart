@@ -117,7 +117,7 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
   Widget build(BuildContext context) {
     return PopScope(
       canPop: !_hasChanges,
-      onPopInvoked: (bool didPop) async {
+      onPopInvokedWithResult: (bool didPop, dynamic result) async {
         if (!didPop && _hasChanges) {
           final shouldPop = await _onWillPop();
           if (shouldPop && mounted) {

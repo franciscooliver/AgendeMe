@@ -324,7 +324,7 @@ class ClientController extends GetxController {
         return _clients.where((c) => c.status == ClientStatus.active).toList();
       case ClientCategory.vip:
         return _clients.where((c) => c.isVipClient).toList();
-      case ClientCategory.new_clients:
+      case ClientCategory.newClients:
         return _clients.where((c) => c.isNewClient).toList();
       case ClientCategory.inactive:
         return _clients.where((c) => c.isInactive).toList();
@@ -389,7 +389,7 @@ enum ClientCategory {
   all,
   active,
   vip,
-  new_clients,
+  newClients,
   inactive,
   frequent,
 }

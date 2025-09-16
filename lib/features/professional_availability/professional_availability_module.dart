@@ -1,5 +1,8 @@
 import 'package:flutter_modular/flutter_modular.dart';
 
+import '../user_profile/domain/repositories/user_profile_repository.dart';
+import '../appointment/domain/repositories/appointment_repository.dart';
+import '../services/domain/repositories/service_repository.dart';
 import 'domain/usecases/get_available_time_slots_usecase.dart';
 import 'presentation/controllers/professional_availability_controller.dart';
 import 'presentation/pages/professional_availability_page.dart';
@@ -14,9 +17,9 @@ class ProfessionalAvailabilityModule extends Module {
     // Use Cases
     i.addLazySingleton<GetAvailableTimeSlotsUseCase>(
       () => GetAvailableTimeSlotsUseCase(
-        userProfileRepository: i(),
-        appointmentRepository: i(),
-        serviceRepository: i(),
+        userProfileRepository: Modular.get<UserProfileRepository>(),
+        appointmentRepository: Modular.get<AppointmentRepository>(),
+        serviceRepository: Modular.get<ServiceRepository>(),
       ),
     );
 

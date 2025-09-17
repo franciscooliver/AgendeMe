@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:get/get.dart';
 
+import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/service_entity.dart';
 import '../controllers/service_controller.dart';
 
@@ -21,6 +22,7 @@ class ServiceFormPage extends StatefulWidget {
 
 class _ServiceFormPageState extends State<ServiceFormPage> {
   late final ServiceController controller;
+  late final AuthController authController;
   final _formKey = GlobalKey<FormState>();
   
   // Controllers dos campos
@@ -38,6 +40,7 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
   void initState() {
     super.initState();
     controller = Modular.get<ServiceController>();
+    authController = Modular.get<AuthController>();
     _isEditMode = widget.serviceId != null;
     
     if (_isEditMode) {
@@ -326,6 +329,17 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
       return;
     }
 
+    final currentUser = authController.currentUser;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Usuário não autenticado'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     controller.clearMessages();
 
     final name = _nameController.text.trim();
@@ -334,15 +348,12 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
     final price = double.parse(_priceController.text);
     final notes = _notesController.text.trim().isEmpty ? null : _notesController.text.trim();
 
-    // TODO: Obter professionalId do contexto do usuário logado
-    const String professionalId = 'temp-professional-id';
-
     bool success;
     
     if (_isEditMode && widget.serviceId != null) {
       success = await controller.updateService(
         serviceId: widget.serviceId!,
-        professionalId: professionalId,
+        professionalId: currentUser.id,
         name: name,
         description: description,
         category: _selectedCategory,
@@ -353,7 +364,7 @@ class _ServiceFormPageState extends State<ServiceFormPage> {
       );
     } else {
       success = await controller.createService(
-        professionalId: professionalId,
+        professionalId: currentUser.id,
         name: name,
         description: description,
         category: _selectedCategory,

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:get/get.dart';
 
+import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../domain/entities/service_entity.dart';
 import '../controllers/service_controller.dart';
 
@@ -15,6 +16,7 @@ class ServiceListPage extends StatefulWidget {
 
 class _ServiceListPageState extends State<ServiceListPage> {
   late final ServiceController controller;
+  late final AuthController authController;
   String searchQuery = '';
   String selectedCategory = '';
 
@@ -22,16 +24,25 @@ class _ServiceListPageState extends State<ServiceListPage> {
   void initState() {
     super.initState();
     controller = Modular.get<ServiceController>();
-    // TODO: Obter professionalId do contexto do usuário logado
+    authController = Modular.get<AuthController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _loadServices();
     });
   }
 
   void _loadServices() {
-    // TODO: Implementar obtenção do professionalId do usuário logado
-    const String professionalId = 'temp-professional-id';
-    controller.loadServices(professionalId);
+    final currentUser = authController.currentUser;
+    if (currentUser != null) {
+      controller.loadServices(currentUser.id);
+    } else {
+      // Se não há usuário logado, mostrar erro
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Usuário não autenticado'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
@@ -293,9 +304,20 @@ class _ServiceListPageState extends State<ServiceListPage> {
   }
 
   void _toggleServiceStatus(ServiceEntity service) async {
+    final currentUser = authController.currentUser;
+    if (currentUser == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Usuário não autenticado'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
     final success = await controller.updateService(
       serviceId: service.id,
-      professionalId: service.professionalId,
+      professionalId: currentUser.id,
       name: service.name,
       description: service.description,
       category: service.category,

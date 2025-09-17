@@ -29,6 +29,13 @@ abstract class AppointmentRemoteDataSource {
     int limit = 20,
     int offset = 0,
   });
+
+  Future<List<AppointmentModel>> getHistoricalAppointmentsByClient(
+    String clientId, {
+    DateTime? startDate,
+    DateTime? endDate,
+    int limit = 100,
+  });
   
   Future<List<AppointmentModel>> getAppointmentsByDateRange(
     DateTime startDate,
@@ -251,6 +258,64 @@ class AppointmentRemoteDataSourceImpl implements AppointmentRemoteDataSource {
           .toList();
     } catch (e) {
       throw Exception('Erro ao buscar agendamentos do cliente: $e');
+    }
+  }
+
+  @override
+  Future<List<AppointmentModel>> getHistoricalAppointmentsByClient(
+    String clientId, {
+    DateTime? startDate,
+    DateTime? endDate,
+    int limit = 100,
+  }) async {
+    try {
+      print('🔍 DEBUG: Buscando histórico de agendamentos para cliente: $clientId');
+      print('🔍 DEBUG: Período: $startDate até $endDate');
+      
+      // Query simplificada - apenas por client_id para evitar problemas de índice
+      Query query = _firestore
+          .collection(_appointmentsCollection)
+          .where('client_id', isEqualTo: clientId);
+
+      final querySnapshot = await query
+          .limit(limit * 2) // Buscar mais para compensar filtros locais
+          .get();
+
+      // Filtrar localmente para evitar problemas de índice
+      final allAppointments = querySnapshot.docs
+          .map((doc) => AppointmentModel.fromDocumentSnapshot(doc))
+          .toList();
+
+      // Filtrar por status histórico
+      final historicalAppointments = allAppointments.where((appointment) {
+        final isHistorical = appointment.status == AppointmentStatus.completed ||
+                            appointment.status == AppointmentStatus.cancelled ||
+                            appointment.status == AppointmentStatus.noShow;
+        
+        // Aplicar filtro de data se fornecido
+        if (startDate != null && appointment.appointmentDateTime.isBefore(startDate)) {
+          return false;
+        }
+        
+        if (endDate != null && appointment.appointmentDateTime.isAfter(endDate)) {
+          return false;
+        }
+        
+        return isHistorical;
+      }).toList();
+
+      // Ordenar por data (mais recentes primeiro)
+      historicalAppointments.sort((a, b) => b.appointmentDateTime.compareTo(a.appointmentDateTime));
+
+      // Limitar resultados
+      final limitedAppointments = historicalAppointments.take(limit).toList();
+
+      print('🔍 DEBUG: Agendamentos históricos encontrados: ${limitedAppointments.length}');
+      
+      return limitedAppointments;
+    } catch (e) {
+      print('❌ DEBUG: Erro ao buscar histórico: $e');
+      throw Exception('Erro ao buscar histórico de agendamentos: $e');
     }
   }
 

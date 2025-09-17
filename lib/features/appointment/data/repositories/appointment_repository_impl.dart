@@ -147,6 +147,30 @@ class AppointmentRepositoryImpl implements AppointmentRepository {
   }
 
   @override
+  Future<Either<Failure, List<AppointmentEntity>>> getHistoricalAppointmentsByClient(
+    String clientId, {
+    DateTime? startDate,
+    DateTime? endDate,
+    int limit = 100,
+  }) async {
+    if (await networkInfo.isConnected) {
+      try {
+        final appointments = await remoteDataSource.getHistoricalAppointmentsByClient(
+          clientId,
+          startDate: startDate,
+          endDate: endDate,
+          limit: limit,
+        );
+        return Right(appointments);
+      } catch (e) {
+        return Left(ServerFailure(message: 'Erro ao buscar histórico de agendamentos: $e'));
+      }
+    } else {
+      return Left(NetworkFailure(message: 'Sem conexão com a internet'));
+    }
+  }
+
+  @override
   Future<Either<Failure, List<AppointmentEntity>>> getAppointmentsByDateRange(
     DateTime startDate,
     DateTime endDate, {

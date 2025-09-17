@@ -82,6 +82,21 @@ abstract class AppointmentRepository {
     int offset = 0,
   });
 
+  /// Busca agendamentos históricos de um cliente
+  /// 
+  /// [clientId] - ID do cliente
+  /// [startDate] - Data inicial do período (opcional)
+  /// [endDate] - Data final do período (opcional)
+  /// [limit] - Número máximo de agendamentos a retornar
+  /// Retorna [Right] com lista de AppointmentEntity
+  /// Retorna [Left] com Failure em caso de erro
+  Future<Either<Failure, List<AppointmentEntity>>> getHistoricalAppointmentsByClient(
+    String clientId, {
+    DateTime? startDate,
+    DateTime? endDate,
+    int limit = 100,
+  });
+
   /// Busca agendamentos por faixa de datas
   /// 
   /// [startDate] - Data inicial da busca

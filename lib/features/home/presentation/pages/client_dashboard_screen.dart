@@ -87,8 +87,7 @@ class ClientDashboardScreen extends StatelessWidget {
                       subtitle: 'Veja serviços anteriores',
                       color: Colors.purple,
                       onTap: () {
-                        // TODO: Implementar histórico
-                        _showComingSoonDialog(context);
+                        Modular.to.pushNamed('/appointments/history');
                       },
                     ),
                   ],
@@ -231,24 +230,6 @@ class ClientDashboardScreen extends StatelessWidget {
     );
   }
 
-  void _showComingSoonDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        icon: const Icon(Icons.construction, color: Colors.orange, size: 48),
-        title: const Text('Em Desenvolvimento'),
-        content: const Text(
-          'Esta funcionalidade está sendo desenvolvida e estará disponível em breve!',
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Entendi'),
-          ),
-        ],
-      ),
-    );
-  }
 
   void _showErrorDialog(BuildContext context, String title, String message) {
     showDialog(

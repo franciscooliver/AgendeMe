@@ -62,9 +62,12 @@ class AuthRepositoryImpl implements AuthRepository {
   @override
   Future<Either<Failure, Unit>> signOut() async {
     try {
+      print('🔍 DEBUG: AuthRepositoryImpl - Chamando remoteDataSource.signOut()...');
       await remoteDataSource.signOut();
+      print('🔍 DEBUG: AuthRepositoryImpl - remoteDataSource.signOut() concluído com sucesso');
       return const Right(unit);
     } catch (e) {
+      print('🔍 DEBUG: AuthRepositoryImpl - Erro no signOut: $e');
       return Left(ServerFailure(message: e.toString()));
     }
   }

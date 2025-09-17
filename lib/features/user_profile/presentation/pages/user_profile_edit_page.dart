@@ -229,6 +229,7 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
     return Center(
       child: ProfileImagePicker(
         imageUrl: _profileImageUrl,
+        size: 120, // Aumentar o tamanho da imagem
         onImageChanged: (String? newImageUrl) {
           setState(() {
             _profileImageUrl = newImageUrl;
@@ -246,11 +247,16 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
       children: [
         TextFormField(
           controller: _nameController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Nome Completo *',
             hintText: 'Digite seu nome completo',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.person_outline),
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.person_outline),
+            filled: true,
+            fillColor: Colors.grey[50],
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+            ),
           ),
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
@@ -265,14 +271,16 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
         const SizedBox(height: 16),
         TextFormField(
           controller: _emailController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Email *',
             hintText: 'seu@email.com',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.email_outlined),
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.email_outlined),
+            filled: true,
+            fillColor: Colors.grey[100], // Cor diferente para indicar que não é editável
+            enabled: false, // Email não pode ser editado
           ),
           keyboardType: TextInputType.emailAddress,
-          enabled: false, // Email não pode ser editado
           validator: (value) {
             if (value == null || value.trim().isEmpty) {
               return 'Email é obrigatório';
@@ -286,11 +294,16 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
         const SizedBox(height: 16),
         TextFormField(
           controller: _bioController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Biografia',
             hintText: 'Conte um pouco sobre você...',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.description_outlined),
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.description_outlined),
+            filled: true,
+            fillColor: Colors.grey[50],
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+            ),
           ),
           maxLines: 3,
           maxLength: 500,
@@ -306,11 +319,17 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
       children: [
         TextFormField(
           controller: _phoneController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Telefone',
             hintText: '(11) 99999-9999',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.phone_outlined),
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.phone_outlined),
+            filled: true,
+            fillColor: Colors.grey[50],
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+            ),
+            helperText: 'Digite apenas números (opcional)',
           ),
           keyboardType: TextInputType.phone,
           inputFormatters: [
@@ -335,11 +354,17 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
       children: [
         TextFormField(
           controller: _addressController,
-          decoration: const InputDecoration(
+          decoration: InputDecoration(
             labelText: 'Endereço',
             hintText: 'Rua, número, complemento',
-            border: OutlineInputBorder(),
-            prefixIcon: Icon(Icons.home_outlined),
+            border: const OutlineInputBorder(),
+            prefixIcon: const Icon(Icons.home_outlined),
+            filled: true,
+            fillColor: Colors.grey[50],
+            focusedBorder: OutlineInputBorder(
+              borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+            ),
+            helperText: 'Endereço completo (opcional)',
           ),
         ),
         const SizedBox(height: 16),
@@ -349,11 +374,16 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
               flex: 2,
               child: TextFormField(
                 controller: _cityController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Cidade',
                   hintText: 'São Paulo',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.location_city_outlined),
+                  border: const OutlineInputBorder(),
+                  prefixIcon: const Icon(Icons.location_city_outlined),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+                  ),
                 ),
               ),
             ),
@@ -361,10 +391,16 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
             Expanded(
               child: TextFormField(
                 controller: _stateController,
-                decoration: const InputDecoration(
+                decoration: InputDecoration(
                   labelText: 'Estado',
                   hintText: 'SP',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
+                  filled: true,
+                  fillColor: Colors.grey[50],
+                  focusedBorder: OutlineInputBorder(
+                    borderSide: BorderSide(color: Theme.of(context).primaryColor, width: 2),
+                  ),
+                  helperText: 'UF',
                 ),
                 textCapitalization: TextCapitalization.characters,
                 maxLength: 2,
@@ -434,23 +470,46 @@ class _UserProfileEditPageState extends State<UserProfileEditPage> {
       children: [
         SizedBox(
           width: double.infinity,
-          child: ElevatedButton(
+          child: ElevatedButton.icon(
             onPressed: _hasChanges ? _saveProfile : null,
             style: ElevatedButton.styleFrom(
               padding: const EdgeInsets.symmetric(vertical: 16),
+              backgroundColor: _hasChanges ? Theme.of(context).primaryColor : Colors.grey,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
-            child: Obx(() => controller.isLoading
-                ? const CircularProgressIndicator(color: Colors.white)
-                : Text(_isEditing ? 'Atualizar Perfil' : 'Criar Perfil')),
+            icon: Obx(() => controller.isLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation(Colors.white),
+                    ),
+                  )
+                : const Icon(Icons.save)),
+            label: Obx(() => controller.isLoading
+                ? const Text('Salvando...')
+                : Text(_isEditing ? 'Salvar Alterações' : 'Criar Perfil')),
           ),
         ),
         if (_hasChanges) ...[
           const SizedBox(height: 12),
           SizedBox(
             width: double.infinity,
-            child: TextButton(
+            child: OutlinedButton.icon(
               onPressed: _discardChanges,
-              child: const Text('Descartar Alterações'),
+              style: OutlinedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                side: BorderSide(color: Colors.grey[400]!),
+              ),
+              icon: const Icon(Icons.refresh),
+              label: const Text('Descartar Alterações'),
             ),
           ),
         ],

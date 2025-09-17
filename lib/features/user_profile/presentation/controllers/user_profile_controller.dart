@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../../core/core.dart';
@@ -402,9 +403,16 @@ class UserProfileController extends GetxController {
         title,
         message,
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green.withOpacity(0.8),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 3),
+        margin: const EdgeInsets.all(16),
+        borderRadius: 8,
       );
     } catch (e) {
       print('⚠️ Erro ao mostrar snackbar de sucesso: $e');
+      // Fallback: usar print se snackbar falhar
+      print('✅ $title: $message');
     }
   }
 
@@ -415,9 +423,16 @@ class UserProfileController extends GetxController {
         title,
         message,
         snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red.withOpacity(0.8),
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+        margin: const EdgeInsets.all(16),
+        borderRadius: 8,
       );
     } catch (e) {
       print('⚠️ Erro ao mostrar snackbar de erro: $e');
+      // Fallback: usar print se snackbar falhar
+      print('❌ $title: $message');
     }
   }
 }

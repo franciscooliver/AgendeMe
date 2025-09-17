@@ -79,8 +79,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   @override
   Future<void> signOut() async {
     try {
+      print('🔍 DEBUG: AuthRemoteDataSource - Iniciando Firebase signOut...');
       await firebaseAuth.signOut();
+      print('🔍 DEBUG: AuthRemoteDataSource - Firebase signOut concluído com sucesso');
     } catch (e) {
+      print('🔍 DEBUG: AuthRemoteDataSource - Erro no Firebase signOut: $e');
       throw Exception('Erro ao fazer logout: ${e.toString()}');
     }
   }

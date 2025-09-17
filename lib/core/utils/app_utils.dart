@@ -125,21 +125,25 @@ class AppUtils {
 
   /// Exibe um loading dialog
   static void showLoadingDialog({String? message}) {
-    Get.dialog(
-      AlertDialog(
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const CircularProgressIndicator(),
-            if (message != null) ...[
-              const SizedBox(height: 16),
-              Text(message),
+    if (Get.context != null) {
+      Get.dialog(
+        AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const CircularProgressIndicator(),
+              if (message != null) ...[
+                const SizedBox(height: 16),
+                Text(message),
+              ],
             ],
-          ],
+          ),
         ),
-      ),
-      barrierDismissible: false,
-    );
+        barrierDismissible: false,
+      );
+    } else {
+      print('🔍 DEBUG: Não foi possível exibir loading dialog - contexto Get nulo');
+    }
   }
 
   /// Fecha o loading dialog

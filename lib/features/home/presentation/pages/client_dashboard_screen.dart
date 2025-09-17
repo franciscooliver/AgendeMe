@@ -69,8 +69,16 @@ class ClientDashboardScreen extends StatelessWidget {
                       subtitle: 'Edite suas informações',
                       color: Colors.orange,
                       onTap: () {
-                        // TODO: Implementar edição de perfil
-                        _showComingSoonDialog(context);
+                        // Navegar para a página de perfil do usuário atual
+                        final currentUserId = authController.currentUser?.id;
+                        if (currentUserId != null) {
+                          Modular.to.pushNamed(
+                            '/user-profile/profile',
+                            arguments: {'userId': currentUserId},
+                          );
+                        } else {
+                          _showErrorDialog(context, 'Erro ao acessar perfil', 'Usuário não encontrado');
+                        }
                       },
                     ),
                     _buildFeatureCard(
@@ -242,6 +250,23 @@ class ClientDashboardScreen extends StatelessWidget {
     );
   }
 
+  void _showErrorDialog(BuildContext context, String title, String message) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        icon: const Icon(Icons.error, color: Colors.red, size: 48),
+        title: Text(title),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showLogoutDialog(BuildContext context, AuthController authController) {
     showDialog(
       context: context,
@@ -250,12 +275,17 @@ class ClientDashboardScreen extends StatelessWidget {
         content: const Text('Tem certeza que deseja sair?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(),
+            onPressed: () {
+              print('🔍 DEBUG: Usuário cancelou logout');
+              Navigator.of(context).pop();
+            },
             child: const Text('Cancelar'),
           ),
           TextButton(
             onPressed: () {
+              print('🔍 DEBUG: Usuário confirmou logout, fechando dialog...');
               Navigator.of(context).pop();
+              print('🔍 DEBUG: Chamando authController.signOut()...');
               authController.signOut();
             },
             child: const Text('Sair'),

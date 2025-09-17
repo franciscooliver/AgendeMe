@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 import '../../../../core/usecases/usecase.dart';
 import '../../domain/entities/user_entity.dart';
@@ -110,24 +111,42 @@ class AuthController extends GetxController {
 
   /// Fazer logout
   Future<bool> signOut() async {
+    print('🔍 DEBUG: Iniciando processo de logout...');
     _isLoading.value = true;
     _errorMessage.value = '';
 
-    final result = await signOutUseCase(NoParams());
+    try {
+      print('🔍 DEBUG: Chamando signOutUseCase...');
+      final result = await signOutUseCase(NoParams());
+      print('🔍 DEBUG: signOutUseCase retornou resultado');
 
-    _isLoading.value = false;
-
-    return result.fold(
-      (failure) {
-        _errorMessage.value = failure.message;
-        return false;
-      },
-      (_) {
-        _currentUser.value = null;
-        _errorMessage.value = '';
-        return true;
-      },
-    );
+      return result.fold(
+        (failure) {
+          print('🔍 DEBUG: Falha no logout: ${failure.message}');
+          _errorMessage.value = failure.message;
+          _isLoading.value = false;
+          
+          return false;
+        },
+        (_) {
+          print('🔍 DEBUG: Logout bem-sucedido, limpando estado...');
+          _currentUser.value = null;
+          _errorMessage.value = '';
+          _isLoading.value = false;
+          
+          print('🔍 DEBUG: Navegando para / (rota raiz)...');
+          // Navegar para a rota raiz, deixando o AuthWrapperPage gerenciar a navegação
+          Modular.to.pushReplacementNamed('/');
+          
+          return true;
+        },
+      );
+    } catch (e) {
+      print('🔍 DEBUG: Erro inesperado no logout: $e');
+      _isLoading.value = false;
+      
+      return false;
+    }
   }
 
   /// Limpar mensagem de erro

@@ -23,10 +23,12 @@ class ProfileInfoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Card(
       elevation: 4,
+      margin: EdgeInsets.zero, // Remove margem para preencher toda a largura
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
       ),
-      child: Padding(
+      child: Container(
+        width: double.infinity, // Força preenchimento da largura
         padding: const EdgeInsets.all(20.0),
         child: Column(
           children: [
@@ -49,13 +51,13 @@ class ProfileInfoCard extends StatelessWidget {
     return Stack(
       children: [
         CircleAvatar(
-          radius: 50,
+          radius: 60, // Aumentado de 50 para 60
           backgroundColor: Colors.grey[300],
           backgroundImage: imageUrl != null ? NetworkImage(imageUrl!) : null,
           child: imageUrl == null
               ? Icon(
                   Icons.person,
-                  size: 50,
+                  size: 60, // Aumentado proporcionalmente
                   color: Colors.grey[600],
                 )
               : null,

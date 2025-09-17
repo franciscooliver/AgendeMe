@@ -45,7 +45,10 @@ class _UserProfileViewPageState extends State<UserProfileViewPage> {
           Obx(() => controller.hasProfile
               ? IconButton(
                   icon: const Icon(Icons.edit),
-                  onPressed: () => Modular.to.pushNamed('/user-profile/edit'),
+                  onPressed: () => Modular.to.pushNamed(
+                    '/user-profile/profile/edit',
+                    arguments: {'userId': widget.userId},
+                  ),
                 )
               : const SizedBox.shrink()),
         ],

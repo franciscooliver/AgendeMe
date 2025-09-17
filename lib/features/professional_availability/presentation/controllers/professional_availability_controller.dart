@@ -35,6 +35,7 @@ class ProfessionalAvailabilityController extends GetxController {
   final RxString _errorMessage = ''.obs;
 
   ProfessionalAvailabilityController(this.professionalId) {
+    print('🔍 DEBUG: ProfessionalAvailabilityController criado com ID: $professionalId');
     _getAvailableTimeSlotsUseCase = Modular.get<GetAvailableTimeSlotsUseCase>();
     _userProfileRepository = Modular.get<UserProfileRepository>();
     _serviceRepository = Modular.get<ServiceRepository>();
@@ -43,6 +44,8 @@ class ProfessionalAvailabilityController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    print('🔍 DEBUG: onInit chamado para professionalId: $professionalId');
+    print('🔍 DEBUG: onInit - Iniciando carregamento de dados...');
     _loadProfessionalData();
   }
 
@@ -59,33 +62,63 @@ class ProfessionalAvailabilityController extends GetxController {
   /// Carrega dados do profissional e seus serviços
   Future<void> _loadProfessionalData() async {
     try {
+      print('🔍 DEBUG: Carregando dados do profissional: $professionalId');
+      print('🔍 DEBUG: Tipo do professionalId: ${professionalId.runtimeType}');
+      print('🔍 DEBUG: Tamanho do professionalId: ${professionalId.length}');
+      print('🔍 DEBUG: Professional: ${professional.toString()}');
       _isLoading.value = true;
       _errorMessage.value = '';
 
-      // Carregar perfil do profissional
-      final professionalResult = await _userProfileRepository.getUserProfileByUserId(professionalId);
+      // Abordagem simplificada: buscar todos os profissionais e filtrar
+      print('🔍 DEBUG: Buscando todos os profissionais...');
+      final allProfessionalsResult = await _userProfileRepository.getUserProfilesByType('professional', limit: 100);
       
-      professionalResult.fold(
+      allProfessionalsResult.fold(
         (failure) {
-          _errorMessage.value = failure.message;
+          print('🔍 DEBUG: Erro ao buscar profissionais: ${failure.message}');
+          _errorMessage.value = 'Erro ao carregar profissionais: ${failure.message}';
         },
-        (profile) {
-          _professional.value = profile;
+        (professionals) {
+          print('🔍 DEBUG: Profissionais encontrados: ${professionals.length}');
+          
+          // Log de todos os profissionais para debug
+          for (final prof in professionals) {
+            print('🔍 DEBUG: - ${prof.name}: userId=${prof.userId}, id=${prof.id}');
+          }
+          
+          // Buscar o profissional pelo userId
+          final matchingProfessional = professionals.where((p) => p.userId == professionalId).firstOrNull;
+          
+          if (matchingProfessional != null) {
+            print('🔍 DEBUG: Profissional encontrado: ${matchingProfessional.name}');
+            print('🔍 DEBUG: Profile ID: ${matchingProfessional.id}');
+            print('🔍 DEBUG: Profile userId: ${matchingProfessional.userId}');
+            _professional.value = matchingProfessional;
+          } else {
+            print('🔍 DEBUG: Profissional não encontrado com userId: $professionalId');
+            _errorMessage.value = 'Profissional não encontrado';
+          }
         },
       );
 
       // Carregar serviços do profissional
+      print('🔍 DEBUG: Carregando serviços para professionalId: $professionalId');
       final servicesResult = await _serviceRepository.getServicesByProfessional(professionalId);
       
       servicesResult.fold(
         (failure) {
+          print('🔍 DEBUG: Erro ao carregar serviços: ${failure.message}');
           _errorMessage.value = failure.message;
         },
         (services) {
+          print('🔍 DEBUG: Serviços carregados: ${services.length}');
           _services.value = services.where((service) => service.isActive).toList();
+          print('🔍 DEBUG: Filtro isActive aplicado. Serviços ativos: ${_services.length}');
+          print('🔍 DEBUG: Serviços ativos: ${_services.length}');
           // Selecionar primeiro serviço por padrão se disponível
           if (_services.isNotEmpty) {
             _selectedService.value = _services.first;
+            print('🔍 DEBUG: Primeiro serviço selecionado: ${_services.first.name}');
           }
         },
       );

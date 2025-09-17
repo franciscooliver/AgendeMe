@@ -8,8 +8,10 @@ import 'domain/repositories/appointment_repository.dart';
 import 'domain/usecases/create_appointment_usecase.dart';
 import 'presentation/controllers/appointment_booking_controller.dart';
 import 'presentation/controllers/appointment_form_controller.dart';
+import 'presentation/controllers/my_appointments_controller.dart';
 import 'presentation/pages/appointment_confirmation_page.dart';
 import 'presentation/pages/appointment_form_page.dart';
+import 'presentation/pages/my_appointments_page.dart';
 
 /// Módulo da feature Appointment
 /// 
@@ -68,6 +70,13 @@ class AppointmentModule extends Module {
         appointmentRepository: i.get<AppointmentRepository>(),
       ),
     );
+
+    i.addLazySingleton<MyAppointmentsController>(
+      () => MyAppointmentsController(
+        appointmentRepository: i.get<AppointmentRepository>(),
+        authController: Modular.get(),
+      ),
+    );
   }
 
   @override
@@ -86,6 +95,12 @@ class AppointmentModule extends Module {
     r.child(
       '/form',
       child: (context) => const AppointmentFormPage(),
+    );
+
+    // Rota para agendamentos do cliente
+    r.child(
+      '/my-appointments',
+      child: (context) => const MyAppointmentsPage(),
     );
   }
 }

@@ -193,39 +193,42 @@ class AvailableSlotsWidget extends StatelessWidget {
 
   /// Estado quando não há slots disponíveis
   Widget _buildNoSlotsState(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.schedule,
-              size: 64,
-              color: Colors.grey[400],
-            ),
-            const SizedBox(height: 16),
-            Text(
-              'Nenhum horário disponível',
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.grey[600],
+    return SingleChildScrollView(
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.schedule,
+                size: 64,
+                color: Colors.grey[400],
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              controller.noSlotsMessage,
-              textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Colors.grey[500],
+              const SizedBox(height: 16),
+              Text(
+                'Nenhum horário disponível',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.grey[600],
+                ),
               ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: controller.refresh,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Atualizar'),
-            ),
-          ],
+              const SizedBox(height: 8),
+              Text(
+                controller.noSlotsMessage,
+                textAlign: TextAlign.center,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Colors.grey[500],
+                ),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: controller.refresh,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Atualizar'),
+              ),
+            ],
+          ),
         ),
       ),
     );

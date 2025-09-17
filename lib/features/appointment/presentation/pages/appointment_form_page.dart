@@ -24,12 +24,7 @@ class _AppointmentFormPageState extends State<AppointmentFormPage> {
   @override
   void initState() {
     super.initState();
-    _controller = AppointmentFormController(
-      getClientsUseCase: Modular.get(),
-      getServicesUseCase: Modular.get(),
-      getUserProfileUseCase: Modular.get(),
-      createAppointmentUseCase: Modular.get(),
-    );
+    _controller = Modular.get<AppointmentFormController>();
     _controller.initialize();
   }
 

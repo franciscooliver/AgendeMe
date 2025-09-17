@@ -317,9 +317,17 @@ class _ProfessionalSearchPageState extends State<ProfessionalSearchPage> {
 
   /// Navega para detalhes do profissional
   void _navigateToProfessionalDetails(UserProfileEntity professional) {
+    print('🔍 DEBUG: Navegando para profissional: ${professional.name}');
+    print('🔍 DEBUG: Professional ID: ${professional.userId}');
+    print('🔍 DEBUG: User Type: ${professional.userType}');
+    print('🔍 DEBUG: Profile ID: ${professional.id}');
+    print('🔍 DEBUG: Professional completo: $professional');
+    
     // Navegar para a página de horários disponíveis
-    Modular.to.pushNamed(
-      '/professional-availability/availability/${professional.userId}',
-    );
+    // Usar o userId como professionalId (que é o que o controller espera)
+    final route = '/professional-availability/availability/${professional.userId}';
+    print('🔍 DEBUG: Rota de navegação: $route');
+    
+    Modular.to.pushNamed(route);
   }
 }

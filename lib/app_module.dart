@@ -38,6 +38,14 @@ import 'features/user_profile/domain/usecases/upload_profile_picture_usecase.dar
 import 'features/user_profile/domain/usecases/pick_and_compress_image_usecase.dart';
 import 'features/user_profile/presentation/controllers/user_profile_controller.dart';
 import 'features/user_profile/presentation/controllers/user_type_selection_controller.dart';
+// Services dependencies for global scope
+import 'features/services/data/datasources/service_remote_datasource.dart';
+import 'features/services/data/repositories/service_repository_impl.dart';
+import 'features/services/domain/repositories/service_repository.dart';
+// Appointment dependencies for global scope
+import 'features/appointment/data/datasources/appointment_remote_datasource.dart';
+import 'features/appointment/data/repositories/appointment_repository_impl.dart';
+import 'features/appointment/domain/repositories/appointment_repository.dart';
 
 class AppModule extends Module {
   @override
@@ -103,6 +111,40 @@ class AppModule extends Module {
     i.addLazySingleton<UserProfileRepository>(
       () => UserProfileRepositoryImpl(
         remoteDataSource: i<UserProfileRemoteDataSource>(),
+        networkInfo: i<NetworkInfo>(),
+      ),
+    );
+
+    // === SERVICES DEPENDENCIES (Global scope for ProfessionalAvailabilityModule) ===
+    
+    // Service Data Sources
+    i.addLazySingleton<ServiceRemoteDataSource>(
+      () => ServiceRemoteDataSourceImpl(
+        firestore: i<FirebaseFirestore>(),
+      ),
+    );
+
+    // Service Repository
+    i.addLazySingleton<ServiceRepository>(
+      () => ServiceRepositoryImpl(
+        remoteDataSource: i<ServiceRemoteDataSource>(),
+        networkInfo: i<NetworkInfo>(),
+      ),
+    );
+
+    // === APPOINTMENT DEPENDENCIES (Global scope for ProfessionalAvailabilityModule) ===
+    
+    // Appointment Data Sources
+    i.addLazySingleton<AppointmentRemoteDataSource>(
+      () => AppointmentRemoteDataSourceImpl(
+        firestore: i<FirebaseFirestore>(),
+      ),
+    );
+
+    // Appointment Repository
+    i.addLazySingleton<AppointmentRepository>(
+      () => AppointmentRepositoryImpl(
+        remoteDataSource: i<AppointmentRemoteDataSource>(),
         networkInfo: i<NetworkInfo>(),
       ),
     );

@@ -60,8 +60,7 @@ class ClientDashboardScreen extends StatelessWidget {
                       subtitle: 'Veja seus compromissos',
                       color: Colors.green,
                       onTap: () {
-                        // TODO: Implementar lista de agendamentos
-                        _showComingSoonDialog(context);
+                        Modular.to.pushNamed('/appointments/my-appointments');
                       },
                     ),
                     _buildFeatureCard(

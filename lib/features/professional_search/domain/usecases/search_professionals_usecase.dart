@@ -45,11 +45,16 @@ class SearchProfessionalsUseCase extends UseCase<List<UserProfileEntity>, Search
   Future<Either<Failure, List<UserProfileEntity>>> call(
     SearchProfessionalsParams params,
   ) async {
+    print('🔍 UseCase: SearchProfessionalsUseCase.call iniciado');
+    print('🔍 UseCase: Params - searchTerm: ${params.searchTerm}, searchType: ${params.searchType}');
+    
     if (!params.isValid) {
+      print('🔍 UseCase: Parâmetros inválidos');
       return Left(ValidationFailure(message: 'Termo de busca não pode estar vazio'));
     }
 
     try {
+      print('🔍 UseCase: Executando busca por tipo: ${params.searchType}');
       switch (params.searchType) {
         case 'name':
           return await _searchByName(params);
@@ -62,6 +67,7 @@ class SearchProfessionalsUseCase extends UseCase<List<UserProfileEntity>, Search
           return await _searchAll(params);
       }
     } catch (e) {
+      print('🔍 UseCase: Erro capturado: $e');
       return Left(ServerFailure(message: 'Erro ao buscar profissionais: $e'));
     }
   }
@@ -169,14 +175,21 @@ class SearchProfessionalsUseCase extends UseCase<List<UserProfileEntity>, Search
   Future<Either<Failure, List<UserProfileEntity>>> _searchAll(
     SearchProfessionalsParams params,
   ) async {
+    print('🔍 UseCase: _searchAll iniciado');
+    
     final result = await repository.getUserProfilesByType(
       'professional',
       limit: 100,
     );
 
     return result.fold(
-      (failure) => Left(failure),
+      (failure) {
+        print('🔍 UseCase: _searchAll - Falha no repository: ${failure.message}');
+        return Left(failure);
+      },
       (professionals) {
+        print('🔍 UseCase: _searchAll - Profissionais encontrados: ${professionals.length}');
+        
         final filtered = professionals.where((professional) {
           final name = professional.name.toLowerCase();
           final city = professional.city?.toLowerCase() ?? '';
@@ -186,14 +199,24 @@ class SearchProfessionalsUseCase extends UseCase<List<UserProfileEntity>, Search
           
           final searchTerm = params.searchTerm.toLowerCase();
           
-          return name.contains(searchTerm) ||
+          final matches = name.contains(searchTerm) ||
                  city.contains(searchTerm) ||
                  state.contains(searchTerm) ||
                  address.contains(searchTerm) ||
                  services.contains(searchTerm);
+          
+          if (matches) {
+            print('🔍 UseCase: Match encontrado - ${professional.name}');
+          }
+          
+          return matches;
         }).toList();
 
+        // Ordenar por data de criação (mais recentes primeiro)
+        filtered.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        
         final limitedResults = filtered.take(params.limit).toList();
+        print('🔍 UseCase: _searchAll - Resultados finais: ${limitedResults.length}');
         return Right(limitedResults);
       },
     );

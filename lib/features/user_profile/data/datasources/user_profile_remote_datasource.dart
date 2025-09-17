@@ -45,6 +45,8 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
     try {
       print('🔍 DataSource: Buscando perfil para userId: $userId');
       print('🔍 DataSource: Collection: $_collectionName');
+      print('🔍 DataSource: Tipo do userId: ${userId.runtimeType}');
+      print('🔍 DataSource: Tamanho do userId: ${userId.length}');
       
       final querySnapshot = await _firestore
           .collection(_collectionName)
@@ -56,6 +58,16 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
 
       if (querySnapshot.docs.isEmpty) {
         print('🔍 DataSource: Nenhum documento encontrado, retornando null');
+        print('🔍 DataSource: Vamos verificar se há documentos na coleção...');
+        
+        // Debug: verificar se há documentos na coleção
+        final allDocs = await _firestore.collection(_collectionName).limit(5).get();
+        print('🔍 DataSource: Total de documentos na coleção: ${allDocs.docs.length}');
+        for (final doc in allDocs.docs) {
+          final data = doc.data();
+          print('🔍 DataSource: Doc ID: ${doc.id}, user_id: ${data['user_id']}, name: ${data['name']}');
+        }
+        
         return null; // Retorna null quando não encontra o perfil
       }
 
@@ -167,19 +179,26 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
     int offset = 0,
   }) async {
     try {
+      print('🔍 DataSource: getUserProfilesByType - userType: $userType, limit: $limit');
+      
       Query query = _firestore
           .collection(_collectionName)
           .where('user_type', isEqualTo: userType)
           .where('is_active', isEqualTo: true)
-          .orderBy('created_at', descending: true)
           .limit(limit);
 
+      print('🔍 DataSource: Executando query...');
       final querySnapshot = await query.get();
+      print('🔍 DataSource: Query executada com sucesso. Docs encontrados: ${querySnapshot.docs.length}');
       
-      return querySnapshot.docs
+      final results = querySnapshot.docs
           .map((doc) => UserProfileModel.fromDocumentSnapshot(doc))
           .toList();
+      
+      print('🔍 DataSource: Modelos criados: ${results.length}');
+      return results;
     } catch (e) {
+      print('🔍 DataSource: Erro em getUserProfilesByType: $e');
       throw Exception('Erro ao buscar perfis por tipo: $e');
     }
   }
@@ -195,7 +214,6 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
           .where('user_type', isEqualTo: 'professional')
           .where('city', isEqualTo: city)
           .where('is_active', isEqualTo: true)
-          .orderBy('created_at', descending: true)
           .limit(limit)
           .get();
       
@@ -213,19 +231,26 @@ class UserProfileRemoteDataSourceImpl implements UserProfileRemoteDataSource {
     int limit = 20,
   }) async {
     try {
+      print('🔍 DataSource: getProfessionalsByService - service: $service, limit: $limit');
+      
       final querySnapshot = await _firestore
           .collection(_collectionName)
           .where('user_type', isEqualTo: 'professional')
           .where('services', arrayContains: service)
           .where('is_active', isEqualTo: true)
-          .orderBy('created_at', descending: true)
           .limit(limit)
           .get();
       
-      return querySnapshot.docs
+      print('🔍 DataSource: Query getProfessionalsByService executada. Docs encontrados: ${querySnapshot.docs.length}');
+      
+      final results = querySnapshot.docs
           .map((doc) => UserProfileModel.fromDocumentSnapshot(doc))
           .toList();
+      
+      print('🔍 DataSource: Modelos criados em getProfessionalsByService: ${results.length}');
+      return results;
     } catch (e) {
+      print('🔍 DataSource: Erro em getProfessionalsByService: $e');
       throw Exception('Erro ao buscar profissionais por serviço: $e');
     }
   }

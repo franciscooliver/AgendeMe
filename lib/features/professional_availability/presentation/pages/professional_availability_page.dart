@@ -30,7 +30,10 @@ class _ProfessionalAvailabilityPageState extends State<ProfessionalAvailabilityP
   @override
   void initState() {
     super.initState();
-    _controller = ProfessionalAvailabilityController(widget.professionalId);
+    print('🔍 DEBUG: ProfessionalAvailabilityPage initState - professionalId: ${widget.professionalId}');
+    _controller = Get.put(ProfessionalAvailabilityController(widget.professionalId));
+    print('🔍 DEBUG: Controller criado e registrado: $_controller');
+    print('🔍 DEBUG: Controller hash: ${_controller.hashCode}');
   }
 
   @override

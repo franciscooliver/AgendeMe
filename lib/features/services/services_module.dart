@@ -28,8 +28,8 @@ class ServicesModule extends Module {
     // External dependencies
     i.addLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
     
-    // NetworkInfo from parent module (AppModule)
-    // Using Modular.get to access parent scope
+    // NetworkInfo - will be injected from parent module
+    // This will be available from AppModule
 
     // Data Sources
     i.addLazySingleton<ServiceRemoteDataSource>(
@@ -42,7 +42,7 @@ class ServicesModule extends Module {
     i.addLazySingleton<ServiceRepository>(
       () => ServiceRepositoryImpl(
         remoteDataSource: i.get<ServiceRemoteDataSource>(),
-        networkInfo: Modular.get<NetworkInfo>(), // Access from parent scope (AppModule)
+        networkInfo: i.get<NetworkInfo>(), // Use local injection instead of Modular.get
       ),
     );
 

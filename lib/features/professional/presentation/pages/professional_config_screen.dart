@@ -126,9 +126,23 @@ class _ProfessionalConfigScreenState extends State<ProfessionalConfigScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text(
-              'Resumo do Perfil',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Resumo do Perfil',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                TextButton.icon(
+                  onPressed: () => _navigateToEditProfile(),
+                  icon: const Icon(Icons.edit, size: 18),
+                  label: const Text('Editar Perfil'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.blue,
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 16),
             Row(
@@ -159,6 +173,36 @@ class _ProfessionalConfigScreenState extends State<ProfessionalConfigScreen> {
                         profile.email,
                         style: const TextStyle(color: Colors.grey),
                       ),
+                      if (profile.phone != null && profile.phone!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.phone, size: 16, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Text(
+                              profile.phone!,
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                          ],
+                        ),
+                      ],
+                      if (profile.address != null && profile.address!.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            const Icon(Icons.location_on, size: 16, color: Colors.grey),
+                            const SizedBox(width: 4),
+                            Expanded(
+                              child: Text(
+                                profile.address!,
+                                style: const TextStyle(color: Colors.grey),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                       if (profile.bio != null) ...[
                         const SizedBox(height: 4),
                         Text(
@@ -525,6 +569,19 @@ class _ProfessionalConfigScreenState extends State<ProfessionalConfigScreen> {
 
     if (selectedTime != null) {
       controller.updateWorkingTime(day, selectedTime, isStartTime);
+    }
+  }
+
+  void _navigateToEditProfile() {
+    final currentUser = userProfileController.userProfile;
+    if (currentUser != null) {
+      Modular.to.pushNamed(
+        '/user-profile/profile/edit',
+        arguments: {'userId': currentUser.userId},
+      ).then((_) {
+        // Recarregar dados após edição
+        _loadInitialData();
+      });
     }
   }
 

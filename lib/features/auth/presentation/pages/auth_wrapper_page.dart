@@ -163,8 +163,8 @@ class _AuthWrapperPageState extends State<AuthWrapperPage> {
         break;
         
       case UserType.professional:
-        print('🔍 DEBUG: Navegando para professional/calendar');
-        Modular.to.pushReplacementNamed('/professional/calendar');
+        print('🔍 DEBUG: Navegando para professional/dashboard');
+        Modular.to.pushReplacementNamed('/professional/dashboard');
         break;
     }
   }

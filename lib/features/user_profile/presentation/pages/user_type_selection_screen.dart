@@ -152,8 +152,8 @@ class UserTypeSelectionScreen extends StatelessWidget {
         break;
         
       case UserType.professional:
-        print('✅ Navegando para calendário profissional');
-        Modular.to.pushReplacementNamed('/professional/calendar');
+        print('✅ Navegando para dashboard profissional');
+        Modular.to.pushReplacementNamed('/professional/dashboard');
         break;
     }
   }

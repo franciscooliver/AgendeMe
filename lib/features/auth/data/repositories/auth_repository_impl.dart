@@ -19,12 +19,14 @@ class AuthRepositoryImpl implements AuthRepository {
   Future<Either<Failure, UserEntity>> signUp({
     required String email,
     required String password,
+    String? name,
   }) async {
     if (await networkInfo.isConnected) {
       try {
         final user = await remoteDataSource.signUp(
           email: email,
           password: password,
+          name: name,
         );
         return Right(user);
       } catch (e) {

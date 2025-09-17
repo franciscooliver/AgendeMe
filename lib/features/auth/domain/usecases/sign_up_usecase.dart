@@ -16,6 +16,7 @@ class SignUpUseCase extends UseCase<UserEntity, SignUpParams> {
     return await repository.signUp(
       email: params.email,
       password: params.password,
+      name: params.name,
     );
   }
 }
@@ -23,12 +24,14 @@ class SignUpUseCase extends UseCase<UserEntity, SignUpParams> {
 class SignUpParams extends Equatable {
   final String email;
   final String password;
+  final String? name;
 
   const SignUpParams({
     required this.email,
     required this.password,
+    this.name,
   });
 
   @override
-  List<Object> get props => [email, password];
+  List<Object?> get props => [email, password, name];
 }

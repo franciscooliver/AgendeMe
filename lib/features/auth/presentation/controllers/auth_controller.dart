@@ -85,6 +85,7 @@ class AuthController extends GetxController {
   Future<bool> signUp({
     required String email,
     required String password,
+    String? name,
   }) async {
     _isLoading.value = true;
     _errorMessage.value = '';
@@ -92,6 +93,7 @@ class AuthController extends GetxController {
     final result = await signUpUseCase(SignUpParams(
       email: email,
       password: password,
+      name: name,
     ));
 
     _isLoading.value = false;

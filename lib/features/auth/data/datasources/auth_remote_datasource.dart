@@ -7,6 +7,7 @@ abstract class AuthRemoteDataSource {
   Future<UserModel> signUp({
     required String email,
     required String password,
+    String? name,
   });
 
   /// Login com email e senha
@@ -34,6 +35,7 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<UserModel> signUp({
     required String email,
     required String password,
+    String? name,
   }) async {
     try {
       final credential = await firebaseAuth.createUserWithEmailAndPassword(
@@ -43,6 +45,13 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
 
       if (credential.user == null) {
         throw Exception('Falha ao criar conta');
+      }
+
+      // Atualizar o displayName se fornecido
+      if (name != null && name.trim().isNotEmpty) {
+        await credential.user!.updateDisplayName(name.trim());
+        // Recarregar o usuário para obter os dados atualizados
+        await credential.user!.reload();
       }
 
       return UserModel.fromFirebaseUser(credential.user!);

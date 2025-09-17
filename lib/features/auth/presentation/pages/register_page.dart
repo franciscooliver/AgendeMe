@@ -13,6 +13,7 @@ class RegisterPage extends StatefulWidget {
 
 class _RegisterPageState extends State<RegisterPage> {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
@@ -20,6 +21,7 @@ class _RegisterPageState extends State<RegisterPage> {
 
   @override
   void dispose() {
+    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
@@ -31,6 +33,7 @@ class _RegisterPageState extends State<RegisterPage> {
       final success = await _authController.signUp(
         email: _emailController.text.trim(),
         password: _passwordController.text,
+        name: _nameController.text.trim().isNotEmpty ? _nameController.text.trim() : null,
       );
 
       if (success && mounted) {
@@ -86,6 +89,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   // Formulário de registro
                   AuthFormWidget(
                     formKey: _formKey,
+                    nameController: _nameController,
                     emailController: _emailController,
                     passwordController: _passwordController,
                     confirmPasswordController: _confirmPasswordController,

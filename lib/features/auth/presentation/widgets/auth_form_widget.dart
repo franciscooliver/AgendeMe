@@ -9,6 +9,7 @@ class AuthFormWidget extends StatelessWidget {
   final TextEditingController emailController;
   final TextEditingController passwordController;
   final TextEditingController? confirmPasswordController;
+  final TextEditingController? nameController;
   final VoidCallback onSubmit;
   final String buttonText;
   final bool isSignUp;
@@ -19,6 +20,7 @@ class AuthFormWidget extends StatelessWidget {
     required this.emailController,
     required this.passwordController,
     this.confirmPasswordController,
+    this.nameController,
     required this.onSubmit,
     required this.buttonText,
     required this.isSignUp,
@@ -32,6 +34,31 @@ class AuthFormWidget extends StatelessWidget {
       key: formKey,
       child: Column(
         children: [
+          // Campo de nome (apenas para registro)
+          if (isSignUp && nameController != null) ...[
+            TextFormField(
+              controller: nameController,
+              keyboardType: TextInputType.name,
+              textCapitalization: TextCapitalization.words,
+              decoration: const InputDecoration(
+                labelText: 'Nome',
+                hintText: 'Digite seu nome completo',
+                prefixIcon: Icon(Icons.person_outline),
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Por favor, digite seu nome';
+                }
+                if (value.trim().length < 2) {
+                  return 'O nome deve ter pelo menos 2 caracteres';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+          ],
+
           // Campo de email
           TextFormField(
             controller: emailController,

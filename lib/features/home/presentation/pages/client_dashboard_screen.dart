@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:get/get.dart';
 
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../../core/domain/services/i_local_cache_service.dart';
@@ -146,11 +147,26 @@ class ClientDashboardScreen extends StatelessWidget {
         children: [
           Row(
             children: [
-              const Icon(
-                Icons.person_outline,
-                color: Colors.white,
-                size: 32,
-              ),
+              // Foto de perfil do usuário ou ícone padrão
+              Obx(() {
+                final user = authController.currentUser;
+                final photoUrl = user?.photoUrl;
+                
+                return CircleAvatar(
+                  radius: 20, // Tamanho adequado para o header
+                  backgroundColor: Colors.white.withValues(alpha: 0.2),
+                  backgroundImage: photoUrl != null && photoUrl.isNotEmpty 
+                      ? NetworkImage(photoUrl) 
+                      : null,
+                  child: photoUrl == null || photoUrl.isEmpty
+                      ? const Icon(
+                          Icons.person_outline,
+                          color: Colors.white,
+                          size: 24,
+                        )
+                      : null,
+                );
+              }),
               const SizedBox(width: 12), // Restaura tamanho original
               const Text(
                 'Bem-vindo!',

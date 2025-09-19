@@ -93,34 +93,36 @@ class UserTypeSelectionScreen extends StatelessWidget {
                 
                 // Cards de seleção
                 Expanded(
-                  child: Column(
-                    children: [
-                      // Card Cliente
-                      _UserTypeCard(
-                        userType: UserType.client,
-                        title: 'Sou Cliente',
-                        subtitle: 'Quero agendar serviços',
-                        description: 'Encontre profissionais e agende seus serviços de forma prática e rápida.',
-                        icon: Icons.person,
-                        color: Colors.blue,
-                        onTap: () => controller.selectUserType(UserType.client),
-                        isSelected: controller.selectedUserType == UserType.client,
-                      ),
-                      
-                      const SizedBox(height: 20),
-                      
-                      // Card Profissional
-                      _UserTypeCard(
-                        userType: UserType.professional,
-                        title: 'Sou Profissional',
-                        subtitle: 'Quero oferecer serviços',
-                        description: 'Gerencie sua agenda, clientes e ofereça seus serviços com facilidade.',
-                        icon: Icons.work,
-                        color: Colors.deepPurple,
-                        onTap: () => controller.selectUserType(UserType.professional),
-                        isSelected: controller.selectedUserType == UserType.professional,
-                      ),
-                    ],
+                  child: SingleChildScrollView(
+                    child: Column(
+                      children: [
+                        // Card Cliente
+                        _UserTypeCard(
+                          userType: UserType.client,
+                          title: 'Sou Cliente',
+                          subtitle: 'Quero agendar serviços',
+                          description: 'Encontre profissionais e agende seus serviços de forma prática e rápida.',
+                          icon: Icons.person,
+                          color: Colors.blue,
+                          onTap: () => controller.selectUserType(UserType.client),
+                          isSelected: controller.selectedUserType == UserType.client,
+                        ),
+                        
+                        const SizedBox(height: 20),
+                        
+                        // Card Profissional
+                        _UserTypeCard(
+                          userType: UserType.professional,
+                          title: 'Sou Profissional',
+                          subtitle: 'Quero oferecer serviços',
+                          description: 'Gerencie sua agenda, clientes e ofereça seus serviços com facilidade.',
+                          icon: Icons.work,
+                          color: Colors.deepPurple,
+                          onTap: () => controller.selectUserType(UserType.professional),
+                          isSelected: controller.selectedUserType == UserType.professional,
+                        ),
+                      ],
+                    ),
                   ),
                 ),
                 

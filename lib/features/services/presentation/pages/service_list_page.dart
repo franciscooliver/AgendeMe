@@ -15,26 +15,99 @@ class ServiceListPage extends StatefulWidget {
 }
 
 class _ServiceListPageState extends State<ServiceListPage> {
-  late final ServiceController controller;
-  late final AuthController authController;
+  ServiceController? controller;
+  AuthController? authController;
   String searchQuery = '';
   String selectedCategory = '';
 
   @override
   void initState() {
     super.initState();
-    controller = Modular.get<ServiceController>();
-    authController = Modular.get<AuthController>();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadServices();
+      _initializeControllers();
     });
   }
 
+  void _initializeControllers() {
+    print('🔍 DEBUG: Iniciando _initializeControllers');
+    try {
+      print('🔍 DEBUG: Tentando obter ServiceController...');
+      controller = Modular.get<ServiceController>();
+      print('🔍 DEBUG: ServiceController obtido com sucesso');
+      
+      print('🔍 DEBUG: Tentando obter AuthController...');
+      authController = Modular.get<AuthController>();
+      print('🔍 DEBUG: AuthController obtido com sucesso');
+      
+      print('🔍 DEBUG: Chamando _loadServices...');
+      _loadServices();
+      
+      // Forçar rebuild da UI após inicialização
+      if (mounted) {
+        setState(() {});
+      }
+    } catch (e) {
+      print('🔍 DEBUG: Erro ao obter controllers: $e');
+      print('🔍 DEBUG: Stack trace: ${StackTrace.current}');
+      
+      // Tentar novamente após um pequeno delay
+      Future.delayed(const Duration(milliseconds: 500), () {
+        try {
+          print('🔍 DEBUG: Tentativa de retry - obtendo controllers...');
+          controller = Modular.get<ServiceController>();
+          authController = Modular.get<AuthController>();
+          print('🔍 DEBUG: Retry bem-sucedido, chamando _loadServices...');
+          _loadServices();
+          
+          // Forçar rebuild da UI após retry
+          if (mounted) {
+            setState(() {});
+          }
+        } catch (e2) {
+          print('🔍 DEBUG: Erro persistente ao obter controllers: $e2');
+          print('🔍 DEBUG: Stack trace retry: ${StackTrace.current}');
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Erro ao carregar serviços: $e2'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
+      });
+    }
+  }
+
   void _loadServices() {
-    final currentUser = authController.currentUser;
+    print('🔍 DEBUG: _loadServices iniciado');
+    
+    if (controller == null || authController == null) {
+      print('🔍 DEBUG: Controllers não inicializados ainda');
+      return;
+    }
+    
+    print('🔍 DEBUG: Controllers inicializados, obtendo currentUser...');
+    final currentUser = authController!.currentUser;
+    print('🔍 DEBUG: currentUser: $currentUser');
+    
     if (currentUser != null) {
-      controller.loadServices(currentUser.id);
+      print('🔍 DEBUG: Usuário encontrado, chamando controller.loadServices com ID: ${currentUser.id}');
+      controller!.loadServices(currentUser.id).then((_) {
+        print('🔍 DEBUG: loadServices completado');
+        // Forçar rebuild da UI após carregamento
+        if (mounted) {
+          setState(() {});
+        }
+      }).catchError((error) {
+        print('🔍 DEBUG: Erro em loadServices: $error');
+        // Forçar rebuild da UI mesmo em caso de erro
+        if (mounted) {
+          setState(() {});
+        }
+      });
     } else {
+      print('🔍 DEBUG: Usuário não autenticado');
       // Se não há usuário logado, mostrar erro
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -62,7 +135,11 @@ class _ServiceListPageState extends State<ServiceListPage> {
         children: [
           _buildSearchAndFilter(),
           Expanded(
-            child: Obx(() => _buildServicesList()),
+            child: controller != null 
+                ? Obx(() => _buildServicesList())
+                : const Center(
+                    child: CircularProgressIndicator(),
+                  ),
           ),
         ],
       ),
@@ -123,11 +200,11 @@ class _ServiceListPageState extends State<ServiceListPage> {
   }
 
   Widget _buildServicesList() {
-    if (controller.isLoading) {
+    if (controller?.isLoading ?? false) {
       return const Center(child: CircularProgressIndicator());
     }
 
-    if (controller.errorMessage.isNotEmpty) {
+    if ((controller?.errorMessage ?? '').isNotEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -135,7 +212,7 @@ class _ServiceListPageState extends State<ServiceListPage> {
             const Icon(Icons.error_outline, size: 64, color: Colors.grey),
             const SizedBox(height: 16),
             Text(
-              controller.errorMessage,
+              controller?.errorMessage ?? 'Erro desconhecido',
               textAlign: TextAlign.center,
               style: const TextStyle(color: Colors.grey),
             ),
@@ -193,7 +270,7 @@ class _ServiceListPageState extends State<ServiceListPage> {
   }
 
   List<ServiceEntity> _getFilteredServices() {
-    List<ServiceEntity> services = controller.services;
+    List<ServiceEntity> services = controller?.services ?? [];
 
     // Filtrar por categoria
     if (selectedCategory.isNotEmpty) {
@@ -202,7 +279,7 @@ class _ServiceListPageState extends State<ServiceListPage> {
 
     // Filtrar por busca
     if (searchQuery.isNotEmpty) {
-      services = controller.searchServicesByName(searchQuery);
+      services = controller?.searchServicesByName(searchQuery) ?? [];
     }
 
     return services;
@@ -304,7 +381,9 @@ class _ServiceListPageState extends State<ServiceListPage> {
   }
 
   void _toggleServiceStatus(ServiceEntity service) async {
-    final currentUser = authController.currentUser;
+    if (authController == null) return;
+    
+    final currentUser = authController!.currentUser;
     if (currentUser == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -315,7 +394,9 @@ class _ServiceListPageState extends State<ServiceListPage> {
       return;
     }
 
-    final success = await controller.updateService(
+    if (controller == null) return;
+    
+    final success = await controller!.updateService(
       serviceId: service.id,
       professionalId: currentUser.id,
       name: service.name,
@@ -331,14 +412,14 @@ class _ServiceListPageState extends State<ServiceListPage> {
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(controller.successMessage),
+          content: Text(controller?.successMessage ?? 'Sucesso'),
           backgroundColor: Colors.green,
         ),
       );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(controller.errorMessage),
+          content: Text(controller?.errorMessage ?? 'Erro'),
           backgroundColor: Colors.red,
         ),
       );
@@ -370,19 +451,21 @@ class _ServiceListPageState extends State<ServiceListPage> {
   }
 
   void _deleteService(ServiceEntity service) async {
-    final success = await controller.removeService(service.id);
+    if (controller == null) return;
+    
+    final success = await controller!.removeService(service.id);
 
     if (success && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(controller.successMessage),
+          content: Text(controller?.successMessage ?? 'Sucesso'),
           backgroundColor: Colors.green,
         ),
       );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(controller.errorMessage),
+          content: Text(controller?.errorMessage ?? 'Erro'),
           backgroundColor: Colors.red,
         ),
       );

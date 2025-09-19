@@ -1,5 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 import '../../core/core.dart';
 import 'data/datasources/service_remote_datasource.dart';
@@ -27,9 +29,11 @@ class ServicesModule extends Module {
   void binds(Injector i) {
     // External dependencies
     i.addLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
+    i.addLazySingleton<Connectivity>(() => Connectivity());
+    i.addLazySingleton<InternetConnectionChecker>(() => InternetConnectionChecker.instance);
     
-    // NetworkInfo - will be injected from parent module
-    // This will be available from AppModule
+    // Core bindings
+    i.addLazySingleton<NetworkInfo>(() => NetworkInfoImpl(i()));
 
     // Data Sources
     i.addLazySingleton<ServiceRemoteDataSource>(
@@ -83,19 +87,19 @@ class ServicesModule extends Module {
   void routes(RouteManager r) {
     // Rota para listagem de serviços
     r.child(
-      '/services',
+      '/',
       child: (context) => const ServiceListPage(),
     );
 
     // Rota para adicionar novo serviço
     r.child(
-      '/services/add',
+      '/add',
       child: (context) => const ServiceFormPage(),
     );
 
     // Rota para editar serviço existente
     r.child(
-      '/services/:serviceId/edit',
+      '/:serviceId/edit',
       child: (context) => ServiceFormPage(
         serviceId: r.args.params['serviceId'],
       ),

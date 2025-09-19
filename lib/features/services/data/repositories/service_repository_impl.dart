@@ -37,17 +37,27 @@ class ServiceRepositoryImpl implements ServiceRepository {
     String professionalId, {
     bool includeInactive = false,
   }) async {
-    if (await networkInfo.isConnected) {
+    print('🔍 DEBUG: ServiceRepository.getServicesByProfessional iniciado para professionalId: $professionalId');
+    
+    print('🔍 DEBUG: Verificando conectividade...');
+    final isConnected = await networkInfo.isConnected;
+    print('🔍 DEBUG: Conectividade: $isConnected');
+    
+    if (isConnected) {
       try {
+        print('🔍 DEBUG: Chamando remoteDataSource.getServicesByProfessional...');
         final serviceModels = await remoteDataSource.getServicesByProfessional(
           professionalId,
           includeInactive: includeInactive,
         );
+        print('🔍 DEBUG: remoteDataSource retornou ${serviceModels.length} serviços');
         return Right(serviceModels.cast<ServiceEntity>());
       } catch (e) {
+        print('🔍 DEBUG: Erro no remoteDataSource: $e');
         return Left(_handleException(e));
       }
     } else {
+      print('🔍 DEBUG: Sem conexão com a internet');
       return Left(NetworkFailure(message: 'Sem conexão com a internet'));
     }
   }

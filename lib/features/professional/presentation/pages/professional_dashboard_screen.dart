@@ -84,7 +84,7 @@ class _ProfessionalDashboardScreenState extends State<ProfessionalDashboardScree
                       title: 'Meus Serviços',
                       subtitle: 'Gerenciar serviços',
                       color: Colors.orange,
-                      onTap: () => Modular.to.pushNamed('/services'),
+                      onTap: () => Modular.to.pushNamed('/services/'),
                     ),
                     _buildFeatureCard(
                       icon: Icons.settings,

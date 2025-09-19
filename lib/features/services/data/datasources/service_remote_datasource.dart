@@ -49,21 +49,36 @@ class ServiceRemoteDataSourceImpl implements ServiceRemoteDataSource {
     String professionalId, {
     bool includeInactive = false,
   }) async {
+    print('🔍 DEBUG: ServiceRemoteDataSource.getServicesByProfessional iniciado');
+    print('🔍 DEBUG: professionalId: $professionalId, includeInactive: $includeInactive');
+    
     try {
+      print('🔍 DEBUG: Construindo query...');
       Query query = _firestore
           .collection(_collectionName)
           .where('professional_id', isEqualTo: professionalId);
 
       if (!includeInactive) {
+        print('🔍 DEBUG: Adicionando filtro is_active = true');
         query = query.where('is_active', isEqualTo: true);
       }
 
+      print('🔍 DEBUG: Executando query...');
       final querySnapshot = await query.get();
+      print('🔍 DEBUG: Query executada com sucesso. Documentos encontrados: ${querySnapshot.docs.length}');
 
-      return querySnapshot.docs
-          .map((doc) => ServiceModel.fromFirestore(doc))
+      final services = querySnapshot.docs
+          .map((doc) {
+            print('🔍 DEBUG: Processando documento: ${doc.id}');
+            return ServiceModel.fromFirestore(doc);
+          })
           .toList();
+      
+      print('🔍 DEBUG: Serviços processados: ${services.length}');
+      return services;
     } catch (e) {
+      print('🔍 DEBUG: Erro no ServiceRemoteDataSource: $e');
+      print('🔍 DEBUG: Stack trace: ${StackTrace.current}');
       throw Exception('Erro ao buscar serviços do profissional: $e');
     }
   }

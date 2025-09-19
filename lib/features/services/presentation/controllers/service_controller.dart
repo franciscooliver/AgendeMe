@@ -47,29 +47,37 @@ class ServiceController extends GetxController {
 
   /// Carrega todos os serviços de um profissional
   Future<void> loadServices(String professionalId, {bool includeInactive = false}) async {
+    print('🔍 DEBUG: ServiceController.loadServices iniciado para professionalId: $professionalId');
     try {
+      print('🔍 DEBUG: Definindo isLoading = true');
       _isLoading.value = true;
       _errorMessage.value = '';
 
+      print('🔍 DEBUG: Chamando getServices...');
       final result = await getServices(
         GetServicesParams(
           professionalId: professionalId,
           includeInactive: includeInactive,
         ),
       );
+      print('🔍 DEBUG: getServices retornou resultado');
 
       result.fold(
         (failure) {
+          print('🔍 DEBUG: Falha ao carregar serviços: ${failure.message}');
           _errorMessage.value = failure.message;
           _services.clear();
         },
         (servicesList) {
+          print('🔍 DEBUG: Serviços carregados com sucesso: ${servicesList.length} serviços');
           _services.assignAll(servicesList);
         },
       );
     } catch (e) {
+      print('🔍 DEBUG: Erro inesperado em loadServices: $e');
       _errorMessage.value = 'Erro inesperado ao carregar serviços: $e';
     } finally {
+      print('🔍 DEBUG: Definindo isLoading = false');
       _isLoading.value = false;
     }
   }

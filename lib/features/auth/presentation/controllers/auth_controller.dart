@@ -2,7 +2,10 @@ import 'package:get/get.dart';
 import 'package:flutter_modular/flutter_modular.dart';
 
 import '../../../../core/usecases/usecase.dart';
+import '../../../../core/data/services/local_cache_service_impl.dart';
+import '../../../../core/domain/services/i_local_cache_service.dart';
 import '../../domain/entities/user_entity.dart';
+import '../../data/models/user_model.dart';
 import '../../domain/usecases/get_current_user_usecase.dart';
 import '../../domain/usecases/sign_in_usecase.dart';
 import '../../domain/usecases/sign_out_usecase.dart';
@@ -35,21 +38,71 @@ class AuthController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    checkCurrentUser();
+    print('🔍 DEBUG: AuthController.onInit() iniciado');
+    print('🔍 DEBUG: AuthController.onInit() - Verificando dependências...');
+    
+    // Usar Future.microtask para garantir que a inicialização aconteça após o build
+    Future.microtask(() async {
+      try {
+        // Testar GetStorage
+        print('🔍 DEBUG: AuthController.onInit() - Obtendo cache service...');
+        final cacheService = Modular.get<ILocalCacheService>();
+        print('🔍 DEBUG: AuthController.onInit() - Cache service obtido: ${cacheService.runtimeType}');
+        
+        if (cacheService is LocalCacheServiceImpl) {
+          print('🔍 DEBUG: AuthController.onInit() - Testando GetStorage...');
+          cacheService.testGetStorage();
+        } else {
+          print('🔍 DEBUG: AuthController.onInit() - Cache service não é LocalCacheServiceImpl!');
+        }
+        
+        // VERIFICAR CACHE PRIMEIRO antes de chamar checkCurrentUser
+        print('🔍 DEBUG: AuthController.onInit() - Verificando cache primeiro...');
+        final cacheData = cacheService.getAuthData();
+        if (cacheData != null) {
+          print('🔍 DEBUG: AuthController.onInit() - Cache encontrado, configurando usuário imediatamente');
+          final userModel = UserModel(
+            id: cacheData['uid'] as String,
+            email: cacheData['email'] as String,
+            emailVerified: true,
+          );
+          _currentUser.value = userModel;
+          print('🔍 DEBUG: AuthController.onInit() - Usuário configurado via cache: ${userModel.email}');
+          print('🔍 DEBUG: AuthController.onInit() - isAuthenticated: $isAuthenticated');
+        } else {
+          print('🔍 DEBUG: AuthController.onInit() - Nenhum cache encontrado');
+        }
+        
+        print('🔍 DEBUG: AuthController.onInit() - Chamando checkCurrentUser...');
+        await checkCurrentUser();
+      } catch (e) {
+        print('🔍 DEBUG: AuthController.onInit() - ERRO: $e');
+      }
+    });
   }
 
   /// Verificar se há usuário logado
   Future<void> checkCurrentUser() async {
+    print('🔍 DEBUG: AuthController.checkCurrentUser() iniciado');
     _isLoading.value = true;
     _errorMessage.value = '';
 
     final result = await getCurrentUserUseCase(NoParams());
 
     result.fold(
-      (failure) => _errorMessage.value = failure.message,
-      (user) => _currentUser.value = user,
+      (failure) {
+        print('🔍 DEBUG: AuthController - Falha ao obter usuário: ${failure.message}');
+        _errorMessage.value = failure.message;
+        _currentUser.value = null;
+      },
+      (user) {
+        print('🔍 DEBUG: AuthController - Usuário encontrado: ${user?.email}');
+        _currentUser.value = user;
+      },
     );
 
+    print('🔍 DEBUG: AuthController - isAuthenticated: $isAuthenticated');
+    print('🔍 DEBUG: AuthController - currentUser: ${_currentUser.value?.email}');
     _isLoading.value = false;
   }
 

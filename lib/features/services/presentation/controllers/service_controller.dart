@@ -1,11 +1,15 @@
 import 'package:get/get.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
+import '../../../../core/data/helpers/cache_first_helper.dart';
+import '../../../../core/domain/services/i_local_cache_service.dart';
 import '../../domain/entities/service_entity.dart';
 import '../../domain/usecases/add_service.dart';
 import '../../domain/usecases/delete_service.dart';
 import '../../domain/usecases/edit_service.dart';
 import '../../domain/usecases/get_service_by_id.dart';
 import '../../domain/usecases/get_services.dart';
+import '../../data/models/service_model.dart';
 
 /// Controller para gerenciar o estado dos serviços
 /// 
@@ -20,6 +24,7 @@ class ServiceController extends GetxController {
   final AddService addService;
   final EditService editService;
   final DeleteService deleteService;
+  late final CacheFirstHelper _cacheHelper;
 
   ServiceController({
     required this.getServices,
@@ -27,7 +32,11 @@ class ServiceController extends GetxController {
     required this.addService,
     required this.editService,
     required this.deleteService,
-  });
+  }) {
+    // Inicializar cache helper
+    final cacheService = Modular.get<ILocalCacheService>();
+    _cacheHelper = CacheFirstHelper(cacheService: cacheService);
+  }
 
   // Estado reativo
   final RxList<ServiceEntity> _services = <ServiceEntity>[].obs;
@@ -45,13 +54,30 @@ class ServiceController extends GetxController {
   String get errorMessage => _errorMessage.value;
   String get successMessage => _successMessage.value;
 
-  /// Carrega todos os serviços de um profissional
+  /// Carrega todos os serviços de um profissional usando cache-first
   Future<void> loadServices(String professionalId, {bool includeInactive = false}) async {
-    print('🔍 DEBUG: ServiceController.loadServices iniciado para professionalId: $professionalId');
+    print('🔍 DEBUG: ServiceController.loadServices iniciado com cache-first para professionalId: $professionalId');
     try {
       print('🔍 DEBUG: Definindo isLoading = true');
       _isLoading.value = true;
       _errorMessage.value = '';
+
+      // Verificar cache primeiro
+      final cacheKey = 'professional_services_${professionalId}_${includeInactive ? 'all' : 'active'}';
+      final cachedData = _cacheHelper.cacheService.getData<List<dynamic>>(cacheKey);
+      
+      if (cachedData != null) {
+        print('🔍 DEBUG: Cache encontrado, carregando serviços do cache');
+        try {
+          final cachedServices = cachedData
+              .map((json) => ServiceModel.fromJson(json as Map<String, dynamic>))
+              .toList();
+          _services.assignAll(cachedServices);
+          print('🔍 DEBUG: ${cachedServices.length} serviços carregados do cache');
+        } catch (e) {
+          print('🔍 DEBUG: Erro ao processar cache de serviços: $e');
+        }
+      }
 
       print('🔍 DEBUG: Chamando getServices...');
       final result = await getServices(
@@ -66,16 +92,36 @@ class ServiceController extends GetxController {
         (failure) {
           print('🔍 DEBUG: Falha ao carregar serviços: ${failure.message}');
           _errorMessage.value = failure.message;
-          _services.clear();
+          // Não limpar serviços se temos cache válido
+          if (cachedData == null) {
+            _services.clear();
+          }
         },
         (servicesList) {
           print('🔍 DEBUG: Serviços carregados com sucesso: ${servicesList.length} serviços');
           _services.assignAll(servicesList);
+          
+          // Salvar no cache
+          try {
+            final servicesJson = servicesList
+                .map((service) => ServiceModel.fromEntity(service).toJson())
+                .toList();
+            _cacheHelper.cacheService.saveData(cacheKey, servicesJson);
+            print('🔍 DEBUG: Serviços salvos no cache');
+          } catch (e) {
+            print('🔍 DEBUG: Erro ao salvar serviços no cache: $e');
+          }
         },
       );
     } catch (e) {
       print('🔍 DEBUG: Erro inesperado em loadServices: $e');
       _errorMessage.value = 'Erro inesperado ao carregar serviços: $e';
+      // Não limpar serviços se temos cache válido
+      final cacheKey = 'professional_services_${professionalId}_${includeInactive ? 'all' : 'active'}';
+      final cachedData = _cacheHelper.cacheService.getData<List<dynamic>>(cacheKey);
+      if (cachedData == null) {
+        _services.clear();
+      }
     } finally {
       print('🔍 DEBUG: Definindo isLoading = false');
       _isLoading.value = false;

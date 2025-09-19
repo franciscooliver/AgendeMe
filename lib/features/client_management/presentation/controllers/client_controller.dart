@@ -1,5 +1,9 @@
 import 'package:get/get.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_modular/flutter_modular.dart';
+
+import '../../../../core/data/helpers/cache_first_helper.dart';
+import '../../../../core/domain/services/i_local_cache_service.dart';
 import '../../domain/entities/client_entity.dart';
 import '../../domain/repositories/client_repository.dart';
 import '../../domain/usecases/get_clients.dart';
@@ -7,6 +11,7 @@ import '../../domain/usecases/get_client_by_id.dart';
 import '../../domain/usecases/search_clients.dart';
 import '../../domain/usecases/add_client.dart';
 import '../../domain/usecases/update_client_statistics.dart';
+import '../../data/models/client_model.dart';
 
 /// Controller para gerenciar o estado do módulo de clientes
 /// 
@@ -22,6 +27,7 @@ class ClientController extends GetxController {
   final AddClient addClient;
   final UpdateClientStatistics updateClientStatistics;
   final ClientRepository clientRepository;
+  late final CacheFirstHelper _cacheHelper;
 
   ClientController({
     required this.getClients,
@@ -30,7 +36,11 @@ class ClientController extends GetxController {
     required this.addClient,
     required this.updateClientStatistics,
     required this.clientRepository,
-  });
+  }) {
+    // Inicializar cache helper
+    final cacheService = Modular.get<ILocalCacheService>();
+    _cacheHelper = CacheFirstHelper(cacheService: cacheService);
+  }
 
   // Estado reativo
   final RxList<ClientEntity> _clients = <ClientEntity>[].obs;
@@ -61,7 +71,7 @@ class ClientController extends GetxController {
   ClientStatistics? get statistics => _statistics.value;
   bool get hasMoreData => _hasMoreData;
 
-  /// Carrega clientes do profissional atual
+  /// Carrega clientes do profissional atual usando cache-first
   Future<void> loadClients({bool refresh = false}) async {
     try {
       if (refresh) {
@@ -87,6 +97,32 @@ class ClientController extends GetxController {
         return;
       }
 
+      // Verificar cache primeiro (apenas para primeira página)
+      if (_currentOffset == 0) {
+        final cacheKey = 'professional_clients_${currentUser.uid}_${_statusFilter.value?.name ?? 'all'}';
+        final cachedData = _cacheHelper.cacheService.getData<List<dynamic>>(cacheKey);
+        
+        if (cachedData != null) {
+          print('🔍 DEBUG: ClientController - Cache encontrado, carregando clientes do cache');
+          try {
+            final cachedClients = cachedData
+                .map((json) => ClientModel.fromJson(json as Map<String, dynamic>))
+                .toList();
+            
+            if (cachedClients.length >= _limit) {
+              _hasMoreData = true;
+            }
+            
+            _clients.assignAll(cachedClients);
+            _currentOffset = cachedClients.length;
+            _applyFilters();
+            print('🔍 DEBUG: ClientController - ${cachedClients.length} clientes carregados do cache');
+          } catch (e) {
+            print('🔍 DEBUG: ClientController - Erro ao processar cache de clientes: $e');
+          }
+        }
+      }
+
       final result = await getClients(GetClientsParams(
         professionalId: currentUser.uid,
         includeInactive: _statusFilter.value == null,
@@ -97,6 +133,10 @@ class ClientController extends GetxController {
       result.fold(
         (failure) {
           _errorMessage.value = failure.message;
+          // Não limpar clientes se temos cache válido
+          if (_currentOffset == 0 && _clients.isEmpty) {
+            // Apenas limpar se não temos cache nem dados carregados
+          }
         },
         (clientsList) {
           if (clientsList.length < _limit) {
@@ -105,6 +145,18 @@ class ClientController extends GetxController {
 
           if (_currentOffset == 0) {
             _clients.assignAll(clientsList);
+            
+            // Salvar no cache (apenas primeira página)
+            try {
+              final clientsJson = clientsList
+                  .map((client) => ClientModel.fromEntity(client).toJson())
+                  .toList();
+              final cacheKey = 'professional_clients_${currentUser.uid}_${_statusFilter.value?.name ?? 'all'}';
+              _cacheHelper.cacheService.saveData(cacheKey, clientsJson);
+              print('🔍 DEBUG: ClientController - Clientes salvos no cache');
+            } catch (e) {
+              print('🔍 DEBUG: ClientController - Erro ao salvar clientes no cache: $e');
+            }
           } else {
             _clients.addAll(clientsList);
           }

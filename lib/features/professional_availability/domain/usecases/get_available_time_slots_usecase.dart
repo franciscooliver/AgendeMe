@@ -122,19 +122,34 @@ class GetAvailableTimeSlotsUseCase {
     required int maxAdvanceDays,
   }) {
     final now = DateTime.now();
-    final minDate = now.add(Duration(hours: minLeadTimeHours));
+    final today = DateTime(now.year, now.month, now.day);
+    final selectedDate = DateTime(date.year, date.month, date.day);
     final maxDate = now.add(Duration(days: maxAdvanceDays));
 
-    if (date.isBefore(minDate)) {
+    // Verificar se a data não está muito no passado
+    if (selectedDate.isBefore(today)) {
       return ServerFailure(
-        message: 'Não é possível agendar com menos de $minLeadTimeHours horas de antecedência',
+        message: 'Não é possível agendar para datas passadas',
       );
     }
 
+    // Verificar se a data não está muito no futuro
     if (date.isAfter(maxDate)) {
       return ServerFailure(
         message: 'Não é possível agendar com mais de $maxAdvanceDays dias de antecedência',
       );
+    }
+
+    // Para o dia atual, verificar se ainda há tempo suficiente
+    if (selectedDate.isAtSameMomentAs(today)) {
+      final minTime = now.add(Duration(hours: minLeadTimeHours));
+      final endOfDay = DateTime(now.year, now.month, now.day, 23, 59, 59);
+      
+      if (minTime.isAfter(endOfDay)) {
+        return ServerFailure(
+          message: 'Não é possível agendar para hoje. Horário mínimo: ${minTime.hour}:${minTime.minute.toString().padLeft(2, '0')}',
+        );
+      }
     }
 
     return null;

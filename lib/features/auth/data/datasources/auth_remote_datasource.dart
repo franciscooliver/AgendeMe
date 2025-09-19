@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 
+import '../../../../core/core.dart';
 import '../models/user_model.dart';
 
 abstract class AuthRemoteDataSource {
@@ -28,8 +29,12 @@ abstract class AuthRemoteDataSource {
 
 class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   final FirebaseAuth firebaseAuth;
+  final ILocalCacheService localCacheService;
 
-  AuthRemoteDataSourceImpl({required this.firebaseAuth});
+  AuthRemoteDataSourceImpl({
+    required this.firebaseAuth,
+    required this.localCacheService,
+  });
 
   @override
   Future<UserModel> signUp({
@@ -54,7 +59,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         await credential.user!.reload();
       }
 
-      return UserModel.fromFirebaseUser(credential.user!);
+      final userModel = UserModel.fromFirebaseUser(credential.user!);
+      
+      // Salvar dados de autenticação no cache local
+      await _saveAuthDataToCache(userModel);
+      
+      return userModel;
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     } catch (e) {
@@ -77,7 +87,12 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
         throw Exception('Falha ao fazer login');
       }
 
-      return UserModel.fromFirebaseUser(credential.user!);
+      final userModel = UserModel.fromFirebaseUser(credential.user!);
+      
+      // Salvar dados de autenticação no cache local
+      await _saveAuthDataToCache(userModel);
+      
+      return userModel;
     } on FirebaseAuthException catch (e) {
       throw _handleFirebaseAuthException(e);
     } catch (e) {
@@ -91,6 +106,11 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
       print('🔍 DEBUG: AuthRemoteDataSource - Iniciando Firebase signOut...');
       await firebaseAuth.signOut();
       print('🔍 DEBUG: AuthRemoteDataSource - Firebase signOut concluído com sucesso');
+      
+      // Limpar dados de autenticação do cache local
+      print('🔍 DEBUG: AuthRemoteDataSource - Limpando cache local...');
+      await localCacheService.clearAuthData();
+      print('🔍 DEBUG: AuthRemoteDataSource - Cache local limpo com sucesso');
     } catch (e) {
       print('🔍 DEBUG: AuthRemoteDataSource - Erro no Firebase signOut: $e');
       throw Exception('Erro ao fazer logout: ${e.toString()}');
@@ -101,10 +121,41 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
   Future<UserModel?> getCurrentUser() async {
     try {
       final currentUser = firebaseAuth.currentUser;
-      if (currentUser == null) return null;
+      print('🔍 DEBUG: getCurrentUser() - Firebase currentUser: ${currentUser?.email}');
       
-      return UserModel.fromFirebaseUser(currentUser);
+      // SEMPRE verificar cache primeiro para debug
+      final cachedAuthData = localCacheService.getAuthData();
+      print('🔍 DEBUG: getCurrentUser() - Cache data: $cachedAuthData');
+      
+      if (currentUser == null) {
+        // Se não há usuário no Firebase, verificar cache local
+        if (cachedAuthData != null) {
+          print('🔍 DEBUG: Firebase não tem usuário, mas cache local tem dados de auth');
+          
+          // Tentar reautenticar usando dados do cache
+          final userModel = UserModel(
+            id: cachedAuthData['uid'] as String,
+            email: cachedAuthData['email'] as String,
+            emailVerified: true, // Assumir que estava verificado antes
+          );
+          
+          print('🔍 DEBUG: Retornando UserModel baseado no cache: ${userModel.email}');
+          return userModel;
+        }
+        
+        print('🔍 DEBUG: Nenhum usuário no Firebase nem no cache');
+        return null;
+      }
+      
+      print('🔍 DEBUG: Usuário encontrado no Firebase: ${currentUser.email}');
+      final userModel = UserModel.fromFirebaseUser(currentUser);
+      
+      // Atualizar cache local com dados atuais
+      await _saveAuthDataToCache(userModel);
+      
+      return userModel;
     } catch (e) {
+      print('🔍 DEBUG: Erro ao obter usuário atual: $e');
       throw Exception('Erro ao obter usuário atual: ${e.toString()}');
     }
   }
@@ -114,6 +165,24 @@ class AuthRemoteDataSourceImpl implements AuthRemoteDataSource {
     return firebaseAuth.authStateChanges().map((user) {
       return user != null ? UserModel.fromFirebaseUser(user) : null;
     });
+  }
+
+  /// Salvar dados de autenticação no cache local
+  Future<void> _saveAuthDataToCache(UserModel userModel) async {
+    try {
+      print('🔍 DEBUG: AuthRemoteDataSource._saveAuthDataToCache() - Salvando dados para: ${userModel.email}');
+      // Para determinar se é profissional, precisamos verificar o perfil do usuário
+      // Por enquanto, vamos assumir que não é profissional (será atualizado quando o perfil for carregado)
+      await localCacheService.saveAuthData(
+        uid: userModel.id,
+        email: userModel.email,
+        isProfessional: false, // Será atualizado quando o perfil for carregado
+      );
+      print('🔍 DEBUG: AuthRemoteDataSource._saveAuthDataToCache() - Dados salvos com sucesso');
+    } catch (e) {
+      // Log do erro mas não falha a operação principal
+      print('🔍 DEBUG: Erro ao salvar dados no cache: $e');
+    }
   }
 
   /// Mapear exceções do Firebase para mensagens amigáveis

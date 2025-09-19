@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_modular/flutter_modular.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import '../../../auth/presentation/controllers/auth_controller.dart';
+import '../../../../core/domain/services/i_local_cache_service.dart';
 
 /// Tela de dashboard para usuários do tipo Cliente
 /// 
@@ -21,6 +23,11 @@ class ClientDashboardScreen extends StatelessWidget {
         foregroundColor: Colors.white,
         elevation: 0,
         actions: [
+          // Botão de teste para forçar logout do Firebase
+          IconButton(
+            icon: const Icon(Icons.bug_report),
+            onPressed: () => _testCache(context, authController),
+          ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () => _showLogoutDialog(context, authController),
@@ -246,6 +253,44 @@ class ClientDashboardScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  /// Teste para verificar cache - força logout do Firebase
+  Future<void> _testCache(BuildContext context, AuthController authController) async {
+    try {
+      print('🔍 DEBUG: TESTE CACHE - Forçando logout do Firebase...');
+      
+      // Forçar logout do Firebase sem limpar cache
+      final firebaseAuth = FirebaseAuth.instance;
+      await firebaseAuth.signOut();
+      
+      print('🔍 DEBUG: TESTE CACHE - Firebase logout concluído');
+      print('🔍 DEBUG: TESTE CACHE - Verificando cache...');
+      
+      // Verificar cache
+      final cacheService = Modular.get<ILocalCacheService>();
+      final cacheData = cacheService.getAuthData();
+      print('🔍 DEBUG: TESTE CACHE - Cache data: $cacheData');
+      
+      // Verificar se AuthController ainda detecta usuário
+      await authController.checkCurrentUser();
+      print('🔍 DEBUG: TESTE CACHE - AuthController.isAuthenticated: ${authController.isAuthenticated}');
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Teste cache concluído. Auth: ${authController.isAuthenticated}'),
+          backgroundColor: authController.isAuthenticated ? Colors.green : Colors.red,
+        ),
+      );
+    } catch (e) {
+      print('🔍 DEBUG: TESTE CACHE - Erro: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro no teste: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   void _showLogoutDialog(BuildContext context, AuthController authController) {

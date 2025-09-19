@@ -9,6 +9,7 @@ export 'usecases/usecase.dart';
 export 'domain/entities/base_entity.dart';
 export 'domain/repositories/base_repository.dart';
 export 'domain/services/i_storage_service.dart';
+export 'domain/services/i_local_cache_service.dart';
 
 // Network
 export 'network/network_info.dart';

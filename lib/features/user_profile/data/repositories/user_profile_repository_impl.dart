@@ -1,6 +1,7 @@
 import 'package:dartz/dartz.dart';
 
 import '../../../../core/core.dart';
+import '../../../../core/data/helpers/cache_first_helper.dart';
 import '../../domain/entities/user_profile_entity.dart';
 import '../../domain/repositories/user_profile_repository.dart';
 import '../datasources/user_profile_remote_datasource.dart';
@@ -9,26 +10,55 @@ import '../models/user_profile_model.dart';
 /// Implementação concreta do UserProfileRepository
 /// 
 /// Coordena entre data sources e trata erros convertendo-os em Failures
+/// Implementa padrão cache-first para melhor performance
 class UserProfileRepositoryImpl implements UserProfileRepository {
   final UserProfileRemoteDataSource remoteDataSource;
   final NetworkInfo networkInfo;
+  final CacheFirstHelper _cacheHelper;
 
   UserProfileRepositoryImpl({
     required this.remoteDataSource,
     required this.networkInfo,
-  });
+    required ILocalCacheService cacheService,
+  }) : _cacheHelper = CacheFirstHelper(cacheService: cacheService);
 
   @override
   Future<Either<Failure, UserProfileEntity>> getUserProfile(String id) async {
     if (await networkInfo.isConnected) {
       try {
-        final userProfileModel = await remoteDataSource.getUserProfile(id);
-        return Right(userProfileModel.toEntity());
+        // Usar cache-first pattern
+        final result = await _cacheHelper.forceRefresh<UserProfileEntity>(
+          cacheKey: 'user_profile_$id',
+          fetchFunction: _fetchUserProfileFromRemote(id),
+          fromJson: (json) => UserProfileModel.fromJson(json).toEntity(),
+          toJson: (entity) => UserProfileModel.fromEntity(entity).toJson(),
+        );
+        return result;
       } catch (e) {
         return Left(_handleException(e));
       }
     } else {
+      // Sem conexão - tentar buscar do cache
+      final cachedData = _cacheHelper.cacheService.getData<Map<String, dynamic>>('user_profile_$id');
+      if (cachedData != null) {
+        try {
+          final entity = UserProfileModel.fromJson(cachedData).toEntity();
+          return Right(entity);
+        } catch (e) {
+          return Left(NetworkFailure(message: 'Sem conexão e cache inválido'));
+        }
+      }
       return Left(NetworkFailure(message: 'Sem conexão com a internet'));
+    }
+  }
+
+  /// Método auxiliar para buscar dados do remote datasource
+  Future<Either<Failure, UserProfileEntity>> _fetchUserProfileFromRemote(String id) async {
+    try {
+      final userProfileModel = await remoteDataSource.getUserProfile(id);
+      return Right(userProfileModel.toEntity());
+    } catch (e) {
+      return Left(_handleException(e));
     }
   }
 

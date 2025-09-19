@@ -6,6 +6,7 @@ import 'package:flutter_modular/flutter_modular.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 import 'core/core.dart';
+import 'core/data/services/local_cache_service_impl.dart';
 import 'features/appointment/appointment_module.dart';
 import 'features/auth/auth_module.dart';
 import 'features/auth/data/datasources/auth_remote_datasource.dart';
@@ -50,6 +51,8 @@ import 'features/appointment/domain/repositories/appointment_repository.dart';
 class AppModule extends Module {
   @override
   void binds(Injector i) {
+    print('🔍 DEBUG: AppModule.binds() iniciado');
+    
     // External dependencies
     i.addLazySingleton<Connectivity>(() => Connectivity());
     i.addLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
@@ -59,10 +62,16 @@ class AppModule extends Module {
     
     // Core bindings
     i.addLazySingleton<NetworkInfo>(() => NetworkInfoImpl(i()));
+    print('🔍 DEBUG: AppModule.binds() - Registrando ILocalCacheService...');
+    i.addLazySingleton<ILocalCacheService>(() => LocalCacheServiceImpl());
+    print('🔍 DEBUG: AppModule.binds() - ILocalCacheService registrado');
     
     // Auth bindings (global scope for AuthWrapperPage)
     i.addLazySingleton<AuthRemoteDataSource>(
-      () => AuthRemoteDataSourceImpl(firebaseAuth: i()),
+      () => AuthRemoteDataSourceImpl(
+        firebaseAuth: i(),
+        localCacheService: i(),
+      ),
     );
     i.addLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(
@@ -78,12 +87,25 @@ class AppModule extends Module {
     i.addLazySingleton(() => GetCurrentUserUseCase(i()));
     
     // Auth Controller (global scope)
-    i.addLazySingleton(() => AuthController(
-          signInUseCase: i(),
-          signUpUseCase: i(),
-          signOutUseCase: i(),
-          getCurrentUserUseCase: i(),
-        ));
+    i.addLazySingleton(() {
+      // FORÇAR instanciação do ILocalCacheService ANTES do AuthController
+      print('🔍 DEBUG: AppModule.binds() - Forçando instanciação do ILocalCacheService');
+      final cacheService = i<ILocalCacheService>();
+      print('🔍 DEBUG: AppModule.binds() - ILocalCacheService instanciado: ${cacheService.runtimeType}');
+      
+      final controller = AuthController(
+        signInUseCase: i(),
+        signUpUseCase: i(),
+        signOutUseCase: i(),
+        getCurrentUserUseCase: i(),
+      );
+      
+      // FORÇAR inicialização do AuthController imediatamente
+      print('🔍 DEBUG: AppModule.binds() - Forçando inicialização do AuthController');
+      controller.onInit();
+      
+      return controller;
+    });
 
     // === USER PROFILE DEPENDENCIES (Global scope for AuthWrapperPage) ===
     
@@ -112,6 +134,7 @@ class AppModule extends Module {
       () => UserProfileRepositoryImpl(
         remoteDataSource: i<UserProfileRemoteDataSource>(),
         networkInfo: i<NetworkInfo>(),
+        cacheService: i<ILocalCacheService>(),
       ),
     );
 

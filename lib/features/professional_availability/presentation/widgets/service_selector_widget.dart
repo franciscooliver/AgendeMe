@@ -60,7 +60,7 @@ class ServiceSelectorWidget extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           SizedBox(
-            height: 120,
+            height: 140,
             child: ListView.builder(
               scrollDirection: Axis.horizontal,
               itemCount: services.length,
@@ -109,6 +109,7 @@ class ServiceSelectorWidget extends StatelessWidget {
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
@@ -121,7 +122,7 @@ class ServiceSelectorWidget extends StatelessWidget {
                           ? Theme.of(context).primaryColor
                           : Colors.black87,
                     ),
-                    maxLines: 2,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
@@ -129,38 +130,46 @@ class ServiceSelectorWidget extends StatelessWidget {
                   Icon(
                     Icons.check_circle,
                     color: Theme.of(context).primaryColor,
-                    size: 20,
+                    size: 18,
                   ),
               ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              service.formattedDuration,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              service.formattedPrice,
-              style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                color: isSelected 
-                    ? Theme.of(context).primaryColor
-                    : Colors.green[700],
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const Spacer(),
-            if (service.description.isNotEmpty)
-              Text(
-                service.description,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Colors.grey[500],
+            const SizedBox(height: 6),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  service.formattedDuration,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[600],
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+                Text(
+                  service.formattedPrice,
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: isSelected 
+                        ? Theme.of(context).primaryColor
+                        : Colors.green[700],
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            if (service.description.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Flexible(
+                child: Text(
+                  service.description,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Colors.grey[500],
+                    fontSize: 11,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
               ),
+            ],
           ],
         ),
       ),

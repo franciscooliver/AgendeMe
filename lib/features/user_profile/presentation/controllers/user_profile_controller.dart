@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:flutter_modular/flutter_modular.dart';
 
 import '../../../../core/core.dart';
+import '../../../../core/data/helpers/cache_first_helper.dart';
+import '../../../../core/domain/services/i_local_cache_service.dart';
 import '../../domain/entities/user_profile_entity.dart';
 import '../../domain/entities/user_type.dart';
 import '../../domain/usecases/create_user_profile.dart';
 import '../../domain/usecases/get_user_profile_by_user_id.dart';
 import '../../domain/usecases/update_user_profile.dart';
 import '../../domain/usecases/upload_profile_picture_usecase.dart';
+import '../../data/models/user_profile_model.dart';
 
 /// Controller para gerenciar o estado do perfil de usuário
 /// 
@@ -21,13 +25,18 @@ class UserProfileController extends GetxController {
   final CreateUserProfile createUserProfile;
   final UpdateUserProfile updateUserProfile;
   final UploadProfilePictureUseCase uploadProfilePictureUseCase;
+  late final CacheFirstHelper _cacheHelper;
 
   UserProfileController({
     required this.getUserProfileByUserId,
     required this.createUserProfile,
     required this.updateUserProfile,
     required this.uploadProfilePictureUseCase,
-  });
+  }) {
+    // Inicializar cache helper
+    final cacheService = Modular.get<ILocalCacheService>();
+    _cacheHelper = CacheFirstHelper(cacheService: cacheService);
+  }
 
   // Estado reativo
   final Rx<UserProfileEntity?> _userProfile = Rx<UserProfileEntity?>(null);
@@ -53,13 +62,31 @@ class UserProfileController extends GetxController {
   bool get isUploadingProfilePicture => _isUploadingProfilePicture.value;
   String get profilePictureError => _profilePictureError.value;
 
-  /// Carrega o perfil do usuário pelo userId do Firebase Auth
+  /// Carrega o perfil do usuário pelo userId do Firebase Auth usando cache-first
   Future<void> loadUserProfile(String userId) async {
     try {
-      print('🔍 UserProfileController: Iniciando loadUserProfile para $userId');
+      print('🔍 UserProfileController: Iniciando loadUserProfile com cache-first para $userId');
       _isLoading.value = true;
       _errorMessage.value = '';
 
+      // Verificar cache primeiro
+      final cacheKey = 'user_profile_$userId';
+      final cachedData = _cacheHelper.cacheService.getData<Map<String, dynamic>>(cacheKey);
+      
+      if (cachedData != null) {
+        print('🔍 UserProfileController: Cache encontrado, carregando dados do cache');
+        try {
+          final cachedProfile = UserProfileModel.fromJson(cachedData).toEntity();
+          _userProfile.value = cachedProfile;
+          _hasProfile.value = true;
+          print('🔍 UserProfileController: Dados do cache carregados: ${cachedProfile.name}');
+        } catch (e) {
+          print('🔍 UserProfileController: Erro ao processar cache: $e');
+        }
+      }
+
+      // Buscar dados frescos em paralelo
+      print('🔍 UserProfileController: Buscando dados frescos do servidor');
       final result = await getUserProfileByUserId(
         GetUserProfileByUserIdParams(userId: userId),
       );
@@ -75,18 +102,32 @@ class UserProfileController extends GetxController {
             _hasProfile.value = false;
             _userProfile.value = null;
             _errorMessage.value = ''; // Limpar erro pois não é um erro real
+            // Limpar cache se não há perfil
+            _cacheHelper.cacheService.removeData(cacheKey);
           } else {
             // Erro real durante a busca do perfil
             print('🔍 UserProfileController: Erro real: ${failure.message}');
             _errorMessage.value = failure.message;
-            _hasProfile.value = false;
-            _userProfile.value = null;
+            // Não alterar hasProfile se temos cache válido
+            if (cachedData == null) {
+              _hasProfile.value = false;
+              _userProfile.value = null;
+            }
           }
         },
         (profile) {
           print('🔍 UserProfileController: Perfil encontrado: ${profile.name} - ${profile.userType}');
           _userProfile.value = profile;
           _hasProfile.value = true;
+          
+          // Salvar no cache
+          try {
+            final profileModel = UserProfileModel.fromEntity(profile);
+            _cacheHelper.cacheService.saveData(cacheKey, profileModel.toJson());
+            print('🔍 UserProfileController: Perfil salvo no cache');
+          } catch (e) {
+            print('🔍 UserProfileController: Erro ao salvar no cache: $e');
+          }
         },
       );
       
@@ -94,8 +135,13 @@ class UserProfileController extends GetxController {
     } catch (e) {
       print('🔍 UserProfileController: Exception capturada: $e');
       _errorMessage.value = 'Erro inesperado ao carregar perfil: $e';
-      _hasProfile.value = false;
-      _userProfile.value = null;
+      // Não alterar hasProfile se temos cache válido
+      final cacheKey = 'user_profile_$userId';
+      final cachedData = _cacheHelper.cacheService.getData<Map<String, dynamic>>(cacheKey);
+      if (cachedData == null) {
+        _hasProfile.value = false;
+        _userProfile.value = null;
+      }
     } finally {
       _isLoading.value = false;
     }

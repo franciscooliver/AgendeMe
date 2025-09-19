@@ -18,14 +18,52 @@ class AuthWrapperPage extends StatefulWidget {
 class _AuthWrapperPageState extends State<AuthWrapperPage> {
   bool _hasCheckedProfile = false;
   bool _isCheckingProfile = false;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    print('🔍 DEBUG: AuthWrapperPage.initState() iniciado');
+    
+    // Aguardar um frame para garantir que o AuthController seja inicializado
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      print('🔍 DEBUG: AuthWrapperPage.initState() - PostFrameCallback executado');
+      setState(() {
+        _isInitialized = true;
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     final authController = Modular.get<AuthController>();
 
     return Obx(() {
+      print('🔍 DEBUG: AuthWrapperPage build - _isInitialized: $_isInitialized, isLoading: ${authController.isLoading}, isAuthenticated: ${authController.isAuthenticated}');
+      
+      // Se ainda não foi inicializado, mostrar loading
+      if (!_isInitialized) {
+        print('🔍 DEBUG: AuthWrapperPage - Aguardando inicialização...');
+        return const Scaffold(
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                CircularProgressIndicator(color: Colors.deepPurple),
+                SizedBox(height: 16),
+                Text(
+                  'Inicializando...',
+                  style: TextStyle(fontSize: 16),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+      
       // Se está carregando autenticação, mostrar loading
       if (authController.isLoading) {
+        print('🔍 DEBUG: AuthWrapperPage - Mostrando loading de autenticação');
         return const Scaffold(
           body: Center(
             child: Column(
@@ -45,6 +83,7 @@ class _AuthWrapperPageState extends State<AuthWrapperPage> {
 
       // Se está autenticado, verificar perfil e navegar apropriadamente
       if (authController.isAuthenticated) {
+        print('🔍 DEBUG: AuthWrapperPage - Usuário autenticado, verificando perfil');
         // Só verificar perfil uma vez
         if (!_hasCheckedProfile && !_isCheckingProfile) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -71,6 +110,7 @@ class _AuthWrapperPageState extends State<AuthWrapperPage> {
       }
 
       // Se não está autenticado, mostrar tela de login
+      print('🔍 DEBUG: AuthWrapperPage - Usuário não autenticado, mostrando login');
       return const LoginPage();
     });
   }

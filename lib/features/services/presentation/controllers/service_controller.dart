@@ -194,6 +194,9 @@ class ServiceController extends GetxController {
         (createdService) {
           _services.add(createdService);
           _successMessage.value = 'Serviço criado com sucesso!';
+          
+          // Invalidar cache de serviços após criação bem-sucedida
+          _invalidateServicesCache(professionalId);
           return true;
         },
       );
@@ -257,6 +260,9 @@ class ServiceController extends GetxController {
           }
           _currentService.value = updatedService;
           _successMessage.value = 'Serviço atualizado com sucesso!';
+          
+          // Invalidar cache de serviços após atualização bem-sucedida
+          _invalidateServicesCache(professionalId);
           return true;
         },
       );
@@ -283,8 +289,17 @@ class ServiceController extends GetxController {
           return false;
         },
         (_) {
+          // Obter o professionalId antes de remover o serviço da lista
+          final removedService = _services.firstWhereOrNull((s) => s.id == serviceId);
+          final professionalId = removedService?.professionalId;
+          
           _services.removeWhere((s) => s.id == serviceId);
           _successMessage.value = 'Serviço removido com sucesso!';
+          
+          // Invalidar cache de serviços após remoção bem-sucedida
+          if (professionalId != null) {
+            _invalidateServicesCache(professionalId);
+          }
           return true;
         },
       );
@@ -363,6 +378,26 @@ class ServiceController extends GetxController {
           ? a.duration.compareTo(b.duration)
           : b.duration.compareTo(a.duration);
     });
+  }
+
+  /// Invalida cache de serviços após modificações
+  void _invalidateServicesCache(String professionalId) {
+    try {
+      // Invalidar caches de serviços (ativos e todos)
+      final cacheKeys = [
+        'professional_services_${professionalId}_active',
+        'professional_services_${professionalId}_all',
+      ];
+      
+      _cacheHelper.invalidateRelatedCaches(cacheKeys).then((result) {
+        result.fold(
+          (failure) => print('⚠️ Erro ao invalidar cache de serviços: ${failure.message}'),
+          (_) => print('✅ Cache de serviços invalidado com sucesso'),
+        );
+      });
+    } catch (e) {
+      print('⚠️ Erro ao invalidar cache de serviços: $e');
+    }
   }
 
   @override

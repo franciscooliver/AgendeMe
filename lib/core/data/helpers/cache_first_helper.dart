@@ -197,6 +197,60 @@ class CacheFirstHelper {
     }
   }
 
+  /// Invalida cache específico e retorna resultado
+  Future<Either<Failure, void>> invalidateSpecificCache(String cacheKey) async {
+    try {
+      await _cacheService.invalidateCache(cacheKey);
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(message: 'Erro ao invalidar cache específico: ${e.toString()}'));
+    }
+  }
+
+  /// Invalida múltiplos caches relacionados
+  Future<Either<Failure, void>> invalidateRelatedCaches(List<String> cacheKeys) async {
+    try {
+      await _cacheService.invalidateMultipleCaches(cacheKeys);
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(message: 'Erro ao invalidar caches relacionados: ${e.toString()}'));
+    }
+  }
+
+  /// Invalida todos os caches de um usuário específico
+  Future<Either<Failure, void>> invalidateUserCaches(String userId) async {
+    try {
+      // Invalidar caches relacionados ao usuário
+      final userCacheKeys = [
+        'user_profile_$userId',
+        'professional_services_${userId}_active',
+        'professional_services_${userId}_all',
+        'professional_clients_${userId}_all',
+      ];
+      
+      await _cacheService.invalidateMultipleCaches(userCacheKeys);
+      return const Right(null);
+    } catch (e) {
+      return Left(ServerFailure(message: 'Erro ao invalidar caches do usuário: ${e.toString()}'));
+    }
+  }
+
+  /// Limpa cache corrompido e retorna informações sobre a limpeza
+  Future<Either<Failure, Map<String, dynamic>>> cleanupCorruptedCache() async {
+    try {
+      await _cacheService.cleanupCorruptedCache();
+      final cacheInfo = _cacheService.getCacheInfo();
+      return Right(cacheInfo);
+    } catch (e) {
+      return Left(ServerFailure(message: 'Erro ao limpar cache corrompido: ${e.toString()}'));
+    }
+  }
+
+  /// Obtém informações detalhadas sobre o cache
+  Map<String, dynamic> getCacheInfo() {
+    return _cacheService.getCacheInfo();
+  }
+
   /// Acesso ao cache service para operações específicas
   ILocalCacheService get cacheService => _cacheService;
 }

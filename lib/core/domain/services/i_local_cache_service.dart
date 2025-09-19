@@ -41,5 +41,19 @@ abstract class ILocalCacheService {
 
   /// Invalida cache específico (remove dados e timestamp)
   Future<void> invalidateCache(String key);
+
+  // === MÉTODOS AVANÇADOS DE INVALIDAÇÃO ===
+
+  /// Invalida múltiplos caches de uma vez
+  Future<void> invalidateMultipleCaches(List<String> keys);
+
+  /// Invalida todos os caches que começam com um prefixo específico
+  Future<void> invalidateCacheByPrefix(String prefix);
+
+  /// Verifica a integridade do cache e limpa dados corrompidos
+  Future<void> cleanupCorruptedCache();
+
+  /// Obtém informações sobre o cache (tamanho, idade, etc.)
+  Map<String, dynamic> getCacheInfo();
 }
 

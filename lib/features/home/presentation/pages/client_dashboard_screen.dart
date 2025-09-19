@@ -36,22 +36,35 @@ class ClientDashboardScreen extends StatelessWidget {
       ),
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24.0),
+          padding: const EdgeInsets.all(16.0), // Reduzido de 24 para 16
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Header de boas-vindas
               _buildWelcomeHeader(authController),
               
-              const SizedBox(height: 32),
+              const SizedBox(height: 24), // Aumentado para dar mais espaço
               
               // Cards de funcionalidades principais
               Expanded(
-                child: GridView.count(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 16,
-                  mainAxisSpacing: 16,
-                  children: [
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    // Calcula o aspect ratio dinamicamente baseado no tamanho da tela
+                    final screenWidth = MediaQuery.of(context).size.width;
+                    final screenHeight = MediaQuery.of(context).size.height;
+                    final isLandscape = screenWidth > screenHeight;
+                    
+                    // Ajusta baseado na orientação e tamanho da tela
+                    final cardWidth = (screenWidth - 48) / 2; // 48 = padding + spacing
+                    final baseHeight = isLandscape ? cardWidth * 0.8 : cardWidth * 1.2;
+                    final aspectRatio = cardWidth / baseHeight;
+                    
+                    return GridView.count(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: aspectRatio, // Calculado dinamicamente
+                      children: [
                     _buildFeatureCard(
                       icon: Icons.search,
                       title: 'Buscar Profissionais',
@@ -97,7 +110,9 @@ class ClientDashboardScreen extends StatelessWidget {
                         Modular.to.pushNamed('/appointments/history');
                       },
                     ),
-                  ],
+                      ],
+                    );
+                  },
                 ),
               ),
             ],
@@ -110,7 +125,7 @@ class ClientDashboardScreen extends StatelessWidget {
   Widget _buildWelcomeHeader(AuthController authController) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20), // Aumentado para dar mais espaço
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [Colors.blue.shade400, Colors.blue.shade600],
@@ -136,31 +151,31 @@ class ClientDashboardScreen extends StatelessWidget {
                 color: Colors.white,
                 size: 32,
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 12), // Restaura tamanho original
               const Text(
                 'Bem-vindo!',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 24,
+                  fontSize: 24, // Restaura tamanho original
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 8), // Restaura tamanho original
           Text(
             authController.currentUser?.email ?? 'Cliente',
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 16,
+              fontSize: 16, // Restaura tamanho original
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 12), // Restaura tamanho original
           const Text(
             'Encontre e agende serviços com os melhores profissionais!',
             style: TextStyle(
               color: Colors.white,
-              fontSize: 14,
+              fontSize: 14, // Restaura tamanho original
             ),
           ),
         ],
@@ -191,44 +206,48 @@ class ClientDashboardScreen extends StatelessWidget {
           ],
         ),
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12), // Aumentado para dar mais espaço
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 40, // Restaura tamanho original
+                height: 40, // Restaura tamanho original
                 decoration: BoxDecoration(
                   color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(10), // Restaura tamanho original
                 ),
                 child: Icon(
                   icon,
                   color: color,
-                  size: 20,
+                  size: 20, // Restaura tamanho original
                 ),
               ),
-              const SizedBox(height: 12),
-              Text(
-                title,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
+              const SizedBox(height: 8), // Mantém tamanho adequado
+              Flexible( // Usa Flexible para permitir que o texto se ajuste ao espaço disponível
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 16, // Restaura tamanho original
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
-              const SizedBox(height: 2),
-              Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey[600],
+              const SizedBox(height: 4), // Mantém espaçamento adequado
+              Flexible( // Usa Flexible para permitir que o texto se ajuste ao espaço disponível
+                child: Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12, // Restaura tamanho original
+                    color: Colors.grey[600],
+                  ),
+                  maxLines: 2, // Restaura para 2 linhas
+                  overflow: TextOverflow.ellipsis,
                 ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),

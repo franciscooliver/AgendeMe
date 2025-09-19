@@ -303,6 +303,9 @@ class ClientController extends GetxController {
           _clients.insert(0, newClient);
           _applyFilters();
           _successMessage.value = 'Cliente adicionado com sucesso!';
+          
+          // Invalidar cache de clientes após adição bem-sucedida
+          _invalidateClientsCache();
           return true;
         },
       );
@@ -337,6 +340,9 @@ class ClientController extends GetxController {
             _clients[index] = updatedClient;
             _applyFilters();
           }
+          
+          // Invalidar cache de clientes após atualização bem-sucedida
+          _invalidateClientsCache();
           return true;
         },
       );
@@ -419,6 +425,30 @@ class ClientController extends GetxController {
   void clearMessages() {
     _errorMessage.value = '';
     _successMessage.value = '';
+  }
+
+  /// Invalida cache de clientes após modificações
+  void _invalidateClientsCache() {
+    try {
+      final currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser == null) return;
+
+      // Invalidar caches de clientes para diferentes filtros
+      final cacheKeys = [
+        'professional_clients_${currentUser.uid}_all',
+        'professional_clients_${currentUser.uid}_active',
+        'professional_clients_${currentUser.uid}_inactive',
+      ];
+      
+      _cacheHelper.invalidateRelatedCaches(cacheKeys).then((result) {
+        result.fold(
+          (failure) => print('⚠️ Erro ao invalidar cache de clientes: ${failure.message}'),
+          (_) => print('✅ Cache de clientes invalidado com sucesso'),
+        );
+      });
+    } catch (e) {
+      print('⚠️ Erro ao invalidar cache de clientes: $e');
+    }
   }
 
   @override

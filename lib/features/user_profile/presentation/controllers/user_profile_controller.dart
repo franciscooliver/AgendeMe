@@ -270,6 +270,9 @@ class UserProfileController extends GetxController {
           _userProfile.value = updatedProfileResult;
           message = 'Perfil atualizado com sucesso!';
           success = true;
+          
+          // Invalidar cache do perfil após atualização bem-sucedida
+          _invalidateProfileCache(updatedProfileResult.userId);
         },
       );
 
@@ -401,6 +404,9 @@ class UserProfileController extends GetxController {
               profileImageUrl: downloadUrl,
               updatedAt: DateTime.now(),
             );
+            
+            // Invalidar cache do perfil após atualização da foto
+            _invalidateProfileCache(_userProfile.value!.userId);
           }
           
           _showSuccessFeedback('Sucesso', 'Foto de perfil atualizada!');
@@ -479,6 +485,21 @@ class UserProfileController extends GetxController {
       print('⚠️ Erro ao mostrar snackbar de erro: $e');
       // Fallback: usar print se snackbar falhar
       print('❌ $title: $message');
+    }
+  }
+
+  /// Invalida cache do perfil após modificações
+  void _invalidateProfileCache(String userId) {
+    try {
+      final cacheKey = 'user_profile_$userId';
+      _cacheHelper.invalidateSpecificCache(cacheKey).then((result) {
+        result.fold(
+          (failure) => print('⚠️ Erro ao invalidar cache do perfil: ${failure.message}'),
+          (_) => print('✅ Cache do perfil invalidado com sucesso'),
+        );
+      });
+    } catch (e) {
+      print('⚠️ Erro ao invalidar cache do perfil: $e');
     }
   }
 }

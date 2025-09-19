@@ -140,6 +140,8 @@ class LocalCacheServiceImpl implements ILocalCacheService {
       
       return true;
     } catch (e) {
+      print('⚠️ Erro ao verificar validade do cache para $key: $e');
+      // Em caso de erro, considerar cache inválido para forçar refresh
       return false;
     }
   }
@@ -154,6 +156,7 @@ class LocalCacheServiceImpl implements ILocalCacheService {
       }
       return null;
     } catch (e) {
+      print('⚠️ Erro ao obter timestamp do cache para $key: $e');
       return null;
     }
   }
@@ -167,7 +170,10 @@ class LocalCacheServiceImpl implements ILocalCacheService {
       // Salvar timestamp
       final timestampKey = '${key}_timestamp';
       await _storage.write(timestampKey, DateTime.now().millisecondsSinceEpoch);
+      
+      print('✅ Cache salvo com sucesso para $key');
     } catch (e) {
+      print('❌ Erro ao salvar dados com timestamp para $key: $e');
       throw Exception('Erro ao salvar dados com timestamp: $e');
     }
   }
@@ -177,8 +183,121 @@ class LocalCacheServiceImpl implements ILocalCacheService {
     try {
       await _storage.remove(key);
       await _storage.remove('${key}_timestamp');
+      print('🗑️ Cache invalidado com sucesso para $key');
     } catch (e) {
+      print('❌ Erro ao invalidar cache para $key: $e');
       throw Exception('Erro ao invalidar cache: $e');
+    }
+  }
+
+  /// Invalida múltiplos caches de uma vez (útil para operações relacionadas)
+  Future<void> invalidateMultipleCaches(List<String> keys) async {
+    try {
+      for (final key in keys) {
+        await invalidateCache(key);
+      }
+      print('🗑️ Múltiplos caches invalidados: ${keys.join(', ')}');
+    } catch (e) {
+      print('❌ Erro ao invalidar múltiplos caches: $e');
+      throw Exception('Erro ao invalidar múltiplos caches: $e');
+    }
+  }
+
+  /// Invalida todos os caches que começam com um prefixo específico
+  Future<void> invalidateCacheByPrefix(String prefix) async {
+    try {
+      final allKeys = _storage.getKeys();
+      final keysToInvalidate = allKeys.where((key) => key.startsWith(prefix)).toList();
+      
+      if (keysToInvalidate.isNotEmpty) {
+        await invalidateMultipleCaches(keysToInvalidate);
+        print('🗑️ Caches com prefixo "$prefix" invalidados: ${keysToInvalidate.length} itens');
+      } else {
+        print('ℹ️ Nenhum cache encontrado com prefixo "$prefix"');
+      }
+    } catch (e) {
+      print('❌ Erro ao invalidar cache por prefixo "$prefix": $e');
+      throw Exception('Erro ao invalidar cache por prefixo: $e');
+    }
+  }
+
+  /// Verifica a integridade do cache e limpa dados corrompidos
+  Future<void> cleanupCorruptedCache() async {
+    try {
+      final allKeys = _storage.getKeys();
+      int cleanedCount = 0;
+      
+      for (final key in allKeys) {
+        if (key.endsWith('_timestamp')) {
+          final dataKey = key.replaceAll('_timestamp', '');
+          
+          // Verificar se existe o arquivo de dados correspondente
+          final hasData = _storage.hasData(dataKey);
+          
+          if (!hasData) {
+            // Se não há dados mas há timestamp, limpar o timestamp
+            await _storage.remove(key);
+            cleanedCount++;
+            print('🧹 Limpo timestamp órfão: $key');
+          }
+        } else if (!key.endsWith('_timestamp') && !key.startsWith('auth_')) {
+          // Verificar se há timestamp correspondente
+          final timestampKey = '${key}_timestamp';
+          final hasTimestamp = _storage.hasData(timestampKey);
+          
+          if (!hasTimestamp) {
+            // Se há dados mas não há timestamp, adicionar timestamp atual
+            await _storage.write(timestampKey, DateTime.now().millisecondsSinceEpoch);
+            cleanedCount++;
+            print('🔧 Adicionado timestamp ausente: $timestampKey');
+          }
+        }
+      }
+      
+      if (cleanedCount > 0) {
+        print('✅ Limpeza de cache concluída: $cleanedCount itens corrigidos');
+      } else {
+        print('ℹ️ Cache está íntegro, nenhuma correção necessária');
+      }
+    } catch (e) {
+      print('❌ Erro durante limpeza de cache: $e');
+      throw Exception('Erro durante limpeza de cache: $e');
+    }
+  }
+
+  /// Obtém informações sobre o cache (tamanho, idade, etc.)
+  Map<String, dynamic> getCacheInfo() {
+    try {
+      final allKeys = _storage.getKeys();
+      final dataKeys = allKeys.where((key) => !key.endsWith('_timestamp') && !key.startsWith('auth_')).toList();
+      final timestampKeys = allKeys.where((key) => key.endsWith('_timestamp')).toList();
+      
+      final cacheEntries = <String, Map<String, dynamic>>{};
+      
+      for (final dataKey in dataKeys) {
+        final timestampKey = '${dataKey}_timestamp';
+        final timestamp = getCacheTimestamp(dataKey);
+        
+        cacheEntries[dataKey] = {
+          'hasData': _storage.hasData(dataKey),
+          'hasTimestamp': _storage.hasData(timestampKey),
+          'timestamp': timestamp?.toIso8601String(),
+          'age': timestamp != null ? DateTime.now().difference(timestamp).inMinutes : null,
+        };
+      }
+      
+      return {
+        'totalEntries': cacheEntries.length,
+        'dataKeys': dataKeys.length,
+        'timestampKeys': timestampKeys.length,
+        'entries': cacheEntries,
+      };
+    } catch (e) {
+      print('❌ Erro ao obter informações do cache: $e');
+      return {
+        'error': e.toString(),
+        'totalEntries': 0,
+      };
     }
   }
 

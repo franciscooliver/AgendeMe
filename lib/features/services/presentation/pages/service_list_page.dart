@@ -143,6 +143,25 @@ class _ServiceListPageState extends State<ServiceListPage> {
           ),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          try {
+            print('🔍 DEBUG: FloatingActionButton pressionado');
+            Modular.to.pushNamed('/services/add');
+          } catch (e) {
+            print('❌ DEBUG: Erro ao navegar para /services/add: $e');
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Erro ao abrir formulário: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        },
+        backgroundColor: Colors.deepPurple,
+        tooltip: 'Adicionar Novo Serviço',
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 
